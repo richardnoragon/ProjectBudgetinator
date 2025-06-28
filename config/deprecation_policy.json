@@ -1,0 +1,11 @@
+{
+  "v1": {
+    "status": "deprecated",
+    "recommended_replacement": "v2",
+    "removal_target": "2026-01-01"
+  },
+  "v2": {
+    "status": "supported",
+    "notes": "Supports pin expiration and compatibility tagging."
+  }
+}
