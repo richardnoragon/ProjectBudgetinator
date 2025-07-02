@@ -1,0 +1,8 @@
+{
+    "theme": "light",
+    "startup_diagnostic": "verbose",
+    "welcome_screen": true,
+    "default_file_location": "",
+    "remember_last_location": false,
+    "save_location": ""
+}
