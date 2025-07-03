@@ -14,15 +14,38 @@ class PartnerDialog(Toplevel):
         self.title("Add Partner Details")
         self.resizable(False, False)
         self.result = None
+        self.partner_number = partner_number
+        self.partner_acronym = partner_acronym
         self.vars = {}
+        
+        # Debug output to verify initialization
+        print(f"\nDEBUG - Initializing dialog with:")
+        print(f"  Partner Number: {partner_number}")
+        print(f"  Partner Acronym: {partner_acronym}")
+        
         fields = [
             ("partner_identification_code", "Partner ID Code"),
             ("name_of_beneficiary", "Name of Beneficiary"),
             ("country", "Country"),
             ("role", "Role"),
-            ("total_estimated_income", "Total Estimated Income"),
-            ("other_explanation_income", "Other Explanation Income"),
-            ("other_explanation_contributions", "Other Explanation Contributions"),
+            ("wp1", "WP1"),
+            ("wp2", "WP2"),
+            ("wp3", "WP3"),
+            ("wp4", "WP4"),
+            ("wp5", "WP5"),
+            ("wp6", "WP6"),
+            ("wp7", "WP7"),
+            ("wp8", "WP8"),
+            ("wp9", "WP9"),
+            ("wp10", "WP10"),
+            ("wp11", "WP11"),
+            ("wp12", "WP12"),
+            ("wp13", "WP13"),
+            ("wp14", "WP14"),
+            ("wp15", "WP15"),
+            ("name_subcontractor_1", "Name Subcontrator 1"),
+            ("sum_subcontractor_1", "Sum Subcontractor 1"),
+            ("explanation_subcontractor_1", "Explanation of Subcontractor 1"),
             ("other_explanation_self", "Other Explanation Self")
         ]
         row = 0
@@ -32,6 +55,8 @@ class PartnerDialog(Toplevel):
         Label(self, text=f"Partner Acronym: {partner_acronym}").grid(
             row=row, column=0, sticky="w", padx=8, pady=2)
         row += 1
+        
+        # Create and store fields
         for key, label in fields:
             Label(self, text=label+":").grid(row=row, column=0, sticky="w", padx=8, pady=2)
             var = StringVar()
@@ -39,6 +64,7 @@ class PartnerDialog(Toplevel):
             entry.grid(row=row, column=1, padx=8, pady=2)
             self.vars[key] = var
             row += 1
+            
         btn_frame = tk.Frame(self)
         btn_frame.grid(row=row, column=0, columnspan=2, pady=8)
         Button(btn_frame, text="Commit", command=self.commit).pack(side="left", padx=8)
@@ -48,15 +74,59 @@ class PartnerDialog(Toplevel):
         self.wait_window()
 
     def commit(self):
-        self.result = {k: v.get() for k, v in self.vars.items()}
-        self.destroy()
+        try:
+            # First show what values we have in the dialog
+            wp_values = {}
+            debug_msg = ["Current dialog values:"]
+            
+            for key, var in self.vars.items():
+                value = var.get().strip()
+                if key.startswith('wp'):
+                    try:
+                        wp_values[key] = float(value) if value else 0.0
+                        debug_msg.append(f"{key} = {wp_values[key]}")
+                    except ValueError:
+                        wp_values[key] = 0.0
+                        debug_msg.append(f"{key} = 0.0 (converted from '{value}')")
+            
+            # Show the values we collected
+            messagebox.showinfo("Debug - Dialog Values", "\n".join(debug_msg))
+            
+            # Now create the result dictionary with all values
+            self.result = {
+                'project_partner_number': self.partner_number,
+                'partner_acronym': self.partner_acronym,
+                'partner_identification_code': self.vars['partner_identification_code'].get(),
+                'name_of_beneficiary': self.vars['name_of_beneficiary'].get(),
+                'country': self.vars['country'].get(),
+                'role': self.vars['role'].get(),
+            }
+            
+            # Add all WP values
+            self.result.update(wp_values)
+            
+            # Show final result that will be saved
+            debug_msg = ["Values being saved:"]
+            for k, v in self.result.items():
+                debug_msg.append(f"{k} = {v}")
+            messagebox.showinfo("Debug - Final Values", "\n".join(debug_msg))
+            
+            self.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error in commit: {str(e)}")
 
     def cancel(self):
         self.result = None
         self.destroy()
 
+
 def add_partner_to_workbook(workbook, partner_info, dev_log=None):
     """Add a partner worksheet to an Excel workbook"""
+    # Debug: Print all received partner info
+    print("DEBUG - Received partner info:")
+    for key, value in partner_info.items():
+        print(f"  {key}: {value}")
+        
     sheet_name = f"P{partner_info['project_partner_number']} {partner_info['partner_acronym']}"
     if sheet_name in workbook.sheetnames:
         messagebox.showerror("Error", "Worksheet already exists.")
@@ -73,7 +143,7 @@ def add_partner_to_workbook(workbook, partner_info, dev_log=None):
         "country": "D5:E5",
         "role": "D6:E6"
     }
-    
+
     # Merge and set values for mapped fields
     debug_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
     for key, cell_range in merge_map.items():
@@ -93,6 +163,51 @@ def add_partner_to_workbook(workbook, partner_info, dev_log=None):
         else:
             start_cell = cell_range
         ws[start_cell] = value
+
+    # Process WP values
+    wp_row = 18  # The row where WP values should go
+    wp_header_row = 17  # The row for WP headers
+    
+    # Show the WP values we're about to process
+    debug_msg = ["WP Values to process:"]
+    for key in partner_info:
+        if key.startswith('wp'):
+            value = partner_info[key]
+            debug_msg.append(f"{key} = {value} (type: {type(value).__name__})")
+    messagebox.showinfo("Debug - WP Values", "\n".join(debug_msg))
+    
+    # Map WP fields to Excel columns (WP1->C, WP2->D, etc)
+    wp_fields = {
+        'wp1': 'C18', 'wp2': 'D18', 'wp3': 'E18', 'wp4': 'F18', 'wp5': 'G18',
+        'wp6': 'H18', 'wp7': 'I18', 'wp8': 'J18', 'wp9': 'K18', 'wp10': 'L18',
+        'wp11': 'M18', 'wp12': 'N18', 'wp13': 'O18', 'wp14': 'P18', 'wp15': 'Q18'
+    }
+    
+    # First write the headers (row 17)
+    for wp_key, cell_ref in wp_fields.items():
+        # Write header
+        header_cell = f"{cell_ref[0]}{wp_header_row}"  # Use first char of cell_ref (column) + header row
+        ws[header_cell] = wp_key.upper()  # wp1 -> WP1
+        
+        # Get and convert the value
+        raw_value = partner_info.get(wp_key, "0")
+        try:
+            if isinstance(raw_value, (int, float)):
+                value = float(raw_value)
+            else:
+                value = float(str(raw_value).strip() or 0)
+        except (ValueError, TypeError):
+            if dev_log:
+                dev_log(f"Warning: Could not convert {wp_key}='{raw_value}' to number, using 0")
+            value = 0.0
+            
+        # Write the value
+        ws[cell_ref] = value
+        cell = ws[cell_ref]
+        cell.number_format = '#,##0.00'
+        
+        if dev_log:
+            dev_log(f"Set {cell_ref} = {value} for {wp_key} (raw_value='{raw_value}')")
 
     # Update version history
     update_version_history(workbook, f"Added partner: {sheet_name}")

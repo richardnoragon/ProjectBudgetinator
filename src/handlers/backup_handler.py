@@ -6,7 +6,7 @@ import shutil
 import json
 from datetime import datetime
 from pathlib import Path
-from ..utils.config_utils import get_app_directory, load_json_config
+from utils.config_utils import get_app_directory, load_json_config
 from ..utils.dialog_utils import show_error, show_info
 
 

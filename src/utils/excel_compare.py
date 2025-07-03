@@ -4,8 +4,8 @@ Excel workbook comparison utilities.
 import pandas as pd
 from datetime import datetime
 import os
-from ..utils.config_utils import get_app_directory
-from ..utils.dialog_utils import show_error
+from utils.config_utils import get_app_directory
+from utils.dialog_utils import show_error
 
 
 def compare_sheets(df1, df2):

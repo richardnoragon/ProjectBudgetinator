@@ -5,7 +5,7 @@ import openpyxl
 from tkinter import messagebox, Toplevel, Label, Entry, Button, StringVar, Frame
 import tkinter as tk
 from datetime import datetime
-from ..version import full_version_string
+from version import full_version_string
 
 
 class WorkpackageDialog(Toplevel):

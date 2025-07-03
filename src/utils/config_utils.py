@@ -4,7 +4,7 @@ Configuration and directory management utilities.
 import os
 import json
 from pathlib import Path
-from ..utils.dialog_utils import show_error, show_info
+from utils.dialog_utils import show_error, show_info
 
 
 def get_app_directory():
