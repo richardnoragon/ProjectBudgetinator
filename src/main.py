@@ -123,6 +123,32 @@ class ProjectBudgetinator:
     # Partner and workpackage operations
     def add_partner(self):
         """Open a dialog to add a new partner to the project."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(file_path)
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    return
+            else:
+                return
+
         from tkinter import simpledialog
         from handlers.partner_handler import (
             PartnerDialog,
@@ -162,10 +188,31 @@ class ProjectBudgetinator:
             partner_info['partner_acronym'] = partner_acronym
 
             if add_partner_to_workbook(self.current_workbook, partner_info):
-                messagebox.showinfo(
-                    "Success",
-                    f"Added partner {partner_number}: {partner_acronym}"
-                )
+                # Save the workbook
+                try:
+                    # Ask user where to save if this is a new workbook
+                    save_path = filedialog.asksaveasfilename(
+                        title="Save Workbook",
+                        defaultextension=".xlsx",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if save_path:
+                        self.current_workbook.save(save_path)
+                        messagebox.showinfo(
+                            "Success",
+                            f"Added partner {partner_number}: {partner_acronym}\n"
+                            f"Workbook saved to: {save_path}"
+                        )
+                    else:
+                        messagebox.showwarning(
+                            "Warning",
+                            "Partner added but workbook not saved!"
+                        )
+                except Exception as e:
+                    messagebox.showerror(
+                        "Error",
+                        f"Failed to save workbook:\n{str(e)}"
+                    )
 
     def delete_partner(self):
         pass
@@ -352,6 +399,63 @@ class ProjectBudgetinator:
                 diff_text.insert(tk.END, diff_str)
                 diff_text.config(state="disabled")
 
+            def export_to_excel():
+                """Export the currently selected difference to an Excel file."""
+                sel = listbox.curselection()
+                if not sel:
+                    messagebox.showinfo("Export", "Please select a file to export.")
+                    return
+                name, diff = diffs[sel[0]]
+                
+                # Create a timestamp for the export
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Prompt for save location
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Differences As",
+                    defaultextension=".xlsx",
+                    filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+                    initialfile=f"diff_{name}_{timestamp}.xlsx"
+                )
+                if not save_path:
+                    return
+                    
+                try:
+                    # Create Excel writer object
+                    with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
+                        # Write comparison information
+                        info_df = pd.DataFrame({
+                            'Parameter': ['Reference File', 'Compared File', 'Export Date'],
+                            'Value': [
+                                os.path.basename(ref_file),
+                                name,
+                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            ]
+                        })
+                        info_df.to_excel(writer, sheet_name='Info', index=False)
+                        
+                        # Write differences
+                        if isinstance(diff, pd.DataFrame):
+                            # Format the differences DataFrame
+                            if '_merge' in diff.columns:
+                                diff = diff.drop('_merge', axis=1)
+                            diff.to_excel(writer, sheet_name='Differences', index=False)
+                        else:
+                            # If diff is not a DataFrame, write as plain text
+                            pd.DataFrame({'Result': [str(diff)]}).to_excel(
+                                writer, sheet_name='Differences', index=False
+                            )
+                            
+                    messagebox.showinfo(
+                        "Export Complete",
+                        f"Differences exported to:\n{save_path}"
+                    )
+                except Exception as e:
+                    messagebox.showerror(
+                        "Export Failed",
+                        f"Error exporting differences:\n{e}"
+                    )
+
             def change_reference():
                 """Change the reference file for comparison."""
                 dialog = tk.Toplevel(self.root)
@@ -388,10 +492,12 @@ class ProjectBudgetinator:
                 show_comparison_dialog(new_ref_idx)
 
             # Button frame
+
             btn_frame = ttk.Frame(result_win)
             btn_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=8)
             btn_frame.grid_columnconfigure(0, weight=1)
             btn_frame.grid_columnconfigure(1, weight=1)
+            btn_frame.grid_columnconfigure(2, weight=1)
 
             ttk.Button(
                 btn_frame,
@@ -401,9 +507,15 @@ class ProjectBudgetinator:
 
             ttk.Button(
                 btn_frame,
+                text="Export to Excel",
+                command=export_to_excel
+            ).grid(row=0, column=1, sticky="ew", padx=5)
+
+            ttk.Button(
+                btn_frame,
                 text="Close",
                 command=result_win.destroy
-            ).grid(row=0, column=1, sticky="e", padx=5)
+            ).grid(row=0, column=2, sticky="e", padx=5)
 
             # Bind events
             listbox.bind("<<ListboxSelect>>", show_diff)
