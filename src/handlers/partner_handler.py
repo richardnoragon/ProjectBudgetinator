@@ -4,7 +4,6 @@ Partner management functions for working with Excel workbooks.
 import openpyxl
 from tkinter import messagebox, simpledialog, Toplevel, Label, Entry, Button, StringVar
 import tkinter as tk
-from openpyxl.styles import PatternFill
 import datetime
 
 class PartnerDialog(Toplevel):
@@ -28,7 +27,7 @@ class PartnerDialog(Toplevel):
             ("name_of_beneficiary", "Name of Beneficiary"),
             ("country", "Country"),
             ("role", "Role")
-        ]
+        ]  # Field names match the label_to_key dictionary in add_partner_to_workbook
         fields_col2 = [
             ("wp1", "WP1"),
             ("wp2", "WP2"),
@@ -159,12 +158,8 @@ class PartnerDialog(Toplevel):
 
 
 
-# --- NEW IMPLEMENTATION: Use PARTNER_TABLE_FORMAT for static formatting ---
-from config.partner_table_format import PARTNER_TABLE_FORMAT, ROW_HEIGHTS, COLUMN_WIDTHS
-from openpyxl.styles import Alignment
-
 def add_partner_to_workbook(workbook, partner_info, dev_log=None):
-    """Add a partner worksheet to an Excel workbook, using static formatting from PARTNER_TABLE_FORMAT."""
+    """Add a partner worksheet to an Excel workbook."""
     print("DEBUG - Received partner info:")
     for key, value in partner_info.items():
         print(f"  {key}: {value}")
@@ -176,90 +171,77 @@ def add_partner_to_workbook(workbook, partner_info, dev_log=None):
 
     ws = workbook.create_sheet(title=sheet_name)
 
-    # Apply row heights and column widths
-    for row_idx, height in ROW_HEIGHTS.items():
-        ws.row_dimensions[row_idx].height = height
-    for col_letter, width in COLUMN_WIDTHS.items():
-        ws.column_dimensions[col_letter].width = width
+    # Write basic partner information
+    ws['B2'] = "Partner Number:"
+    ws['D2'] = partner_info['project_partner_number']
+    ws['B3'] = "Partner Acronym:"
+    ws['D3'] = partner_info['partner_acronym']
+    ws['B4'] = "Partner ID Code:"
+    ws['D4'] = partner_info['partner_identification_code']
+    ws['B5'] = "Name of Beneficiary:"
+    ws['D5'] = partner_info['name_of_beneficiary']
+    ws['B6'] = "Country:"
+    ws['D6'] = partner_info['country']
+    ws['B7'] = "Role:"
+    ws['D7'] = partner_info['role']
 
-    # --- Apply static labels and formatting from PARTNER_TABLE_FORMAT ---
-    from openpyxl.utils import range_boundaries
-    for cell_def in PARTNER_TABLE_FORMAT:
-        cell_range = cell_def["range"]
-        label = cell_def["label"]
-        merge = cell_def.get("merge", False)
-        fill_color = cell_def.get("fillColor")
-        alignment = cell_def.get("alignment")
+    # Write work package values
+    ws['B17'] = "Work Packages"
+    for i in range(1, 16):
+        wp_key = f'wp{i}'
+        col = chr(ord('C') + i - 1)  # C for wp1, D for wp2, etc.
+        ws[f'{col}17'] = f'WP{i}'
+        ws[f'{col}18'] = float(partner_info.get(wp_key, 0))
 
-        # Merge cells if needed
-        if merge or (":" in cell_range):
-            ws.merge_cells(cell_range)
-        # Always set value in the top-left cell of the range
-        start_cell = cell_range.split(":")[0]
-        ws[start_cell] = label
+    # Write subcontractor information
+    current_row = 20
+    ws[f'B{current_row}'] = "Subcontractor 1"
+    ws[f'B{current_row+1}'] = "Name:"
+    ws[f'D{current_row+1}'] = partner_info.get('name_subcontractor_1', '')
+    ws[f'B{current_row+2}'] = "Sum:"
+    ws[f'D{current_row+2}'] = partner_info.get('sum_subcontractor_1', '')
+    ws[f'B{current_row+3}'] = "Explanation:"
+    ws[f'D{current_row+3}'] = partner_info.get('explanation_subcontractor_1', '')
 
-        min_col, min_row, max_col, max_row = range_boundaries(cell_range)
-        # Apply fill color if specified
-        if fill_color:
-            fill = PatternFill(start_color=fill_color.replace("#", ""), end_color=fill_color.replace("#", ""), fill_type="solid")
-            for row in ws.iter_rows(min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col):
-                for cell in row:
-                    cell.fill = fill
-        # Apply alignment if specified
-        if alignment:
-            align = Alignment(horizontal=alignment)
-            for row in ws.iter_rows(min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col):
-                for cell in row:
-                    cell.alignment = align
+    current_row += 5
+    ws[f'B{current_row}'] = "Subcontractor 2"
+    ws[f'B{current_row+1}'] = "Name:"
+    ws[f'D{current_row+1}'] = partner_info.get('name_subcontractor_2', '')
+    ws[f'B{current_row+2}'] = "Sum:"
+    ws[f'D{current_row+2}'] = partner_info.get('sum_subcontractor_2', '')
+    ws[f'B{current_row+3}'] = "Explanation:"
+    ws[f'D{current_row+3}'] = partner_info.get('explanation_subcontractor_2', '')
 
-    # --- Insert dynamic partner values (example: number, acronym, etc.) ---
-    # You may want to map partner_info keys to the correct cell from PARTNER_TABLE_FORMAT
-    # Example: insert partner number and acronym
-    # (You can expand this mapping as needed)
-    label_to_key = {
-        "Partner Number": "project_partner_number",
-        "Partner Acronym": "partner_acronym",
-        "PIC number": "partner_identification_code",
-        "Country": "country",
-        "Role": "role",
-        "Name of beneficiary": "name_of_beneficiary"
-    }
-    for cell_def in PARTNER_TABLE_FORMAT:
-        label = cell_def["label"]
-        key = label_to_key.get(label)
-        if key and key in partner_info:
-            cell_range = cell_def["range"]
-            start_cell = cell_range.split(":")[0]
-            ws[start_cell] = partner_info[key]
+    # Write additional financial information
+    current_row += 5
+    financial_fields = [
+        ('sum_travel', 'Travel and subsistence /€'),
+        ('sum_equipment', 'Equipment /€'),
+        ('sum_other', 'Other goods, works and services /€'),
+        ('sum_financial_support', 'Financial support to third parties /€'),
+        ('sum_internal_goods', 'Internally invoiced goods & services /€'),
+        ('sum_income_generated', 'Income generated by the action'),
+        ('sum_financial_contributions', 'Financial contributions'),
+        ('sum_own_resources', 'Own resources')
+    ]
 
-    # --- WP values (dynamic) ---
-    # Map WP fields to Excel columns (WP1->C, WP2->D, etc)
-    wp_fields = {
-        'wp1': 'C18', 'wp2': 'D18', 'wp3': 'E18', 'wp4': 'F18', 'wp5': 'G18',
-        'wp6': 'H18', 'wp7': 'I18', 'wp8': 'J18', 'wp9': 'K18', 'wp10': 'L18',
-        'wp11': 'M18', 'wp12': 'N18', 'wp13': 'O18', 'wp14': 'P18', 'wp15': 'Q18'
-    }
-    wp_header_row = 17
-    for wp_key, cell_ref in wp_fields.items():
-        # Write header
-        header_cell = f"{cell_ref[0]}{wp_header_row}"
-        ws[header_cell] = wp_key.upper()
-        # Get and convert the value
-        raw_value = partner_info.get(wp_key, "0")
-        try:
-            if isinstance(raw_value, (int, float)):
-                value = float(raw_value)
-            else:
-                value = float(str(raw_value).strip() or 0)
-        except (ValueError, TypeError):
-            if dev_log:
-                dev_log(f"Warning: Could not convert {wp_key}='{raw_value}' to number, using 0")
-            value = 0.0
-        ws[cell_ref] = value
-        cell = ws[cell_ref]
-        cell.number_format = '#,##0.00'
-        if dev_log:
-            dev_log(f"Set {cell_ref} = {value} for {wp_key} (raw_value='{raw_value}')")
+    for field, label in financial_fields:
+        ws[f'B{current_row}'] = label
+        ws[f'D{current_row}'] = partner_info.get(field, '')
+        if field.startswith('sum_'):
+            try:
+                value = float(partner_info.get(field, '0'))
+                ws[f'D{current_row}'].number_format = '#,##0.00'
+            except ValueError:
+                pass
+        current_row += 1
+
+        # Add explanation if it exists
+        explanation_key = f'explanation_{field[4:]}' if field.startswith('sum_') else None
+        if explanation_key and explanation_key in partner_info:
+            ws[f'B{current_row}'] = f'Explanation for {label}:'
+            ws[f'D{current_row}'] = partner_info.get(explanation_key, '')
+            current_row += 1
 
     # Update version history
     update_version_history(workbook, f"Added partner: {sheet_name}")

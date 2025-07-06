@@ -1,1422 +1,1420 @@
-PARTNER_TABLE_FORMAT = [   # Partner information section
+PARTNER_TABLE_FORMAT = [
+    # Partner information section
     {
         "label": "Partner Number Label",
-        "range": "B2:C2",
+        "RANGE": "B2:C2",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner Number",
-        "range": "D2:E2",
+        "RANGE": "D2:E2",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Partner Acronym Label",
-        "range": "B3:C3",
+        "RANGE": "B3:C3",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner Acronym",
-        "range": "D3:E3",
+        "RANGE": "D3:E3",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Partner ID Code Label",
-        "range": "B4:C4",
+        "RANGE": "B4:C4",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner ID Code",
-        "range": "D4:E4",
+        "RANGE": "D4:E4",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Name of Beneficiary Label",
-        "range": "B5:C5",
+        "RANGE": "B5:C5",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Name of Beneficiary",
-        "range": "D5:E5",
+        "RANGE": "D5:E5",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Country Label",
-        "range": "B6:C6",
+        "RANGE": "B6:C6",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Country",
-        "range": "D6:E6",
+        "RANGE": "D6:E6",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Role Label",
-        "range": "B7:C7",
+        "RANGE": "B7:C7",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Role",
-        "range": "D7:E7",
+        "RANGE": "D7:E7",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "left"
     },
     {
         "label": "",
-        "range": "D2:E2",
+        "RANGE": "D2:E2",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "right"
     },
     {
         "label": "Partner Acronym",
-        "range": "B3:C3",
+        "RANGE": "B3:C3",
         "merge": True,
-        "fillColor": "d9d9d9",
-        "alignment": "right"
-    },
-   {
-        "label": "",
-        "range": "D3:E3",
-        "merge": True,
-        "fillColor": "c5e0b4",
-        "alignment": "right"
-    },
-    {
-        "label": "PIC number",
-        "range": "B4:C4",
-        "merge": True,
-        "fillColor": "d9d9d9",
-        "alignment": "right"
-    },
-   {
-        "label": "",
-        "range": "D4:E4",
-        "merge": True,
-        "fillColor": "c5e0b4",
-        "alignment": "right"
-    },
-    {
-        "label": "Country",
-        "range": "B5:C5",
-        "merge": True,
-        "fillColor": "d9d9d9",
-        "alignment": "right"
-    },
-   {
-        "label": "",
-        "range": "D5:E5",
-        "merge": True,
-        "fillColor": "c5e0b4",
-        "alignment": "right"
-    },
-    {
-        "label": "Role",
-        "range": "B6:C6",
-        "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
         {
         "label": "",
-        "range": "D6:E6",
+        "RANGE": "D3:E3",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
+        "alignment": "right"
+    },
+    {
+        "label": "PIC number",
+        "RANGE": "B4:C4",
+        "merge": True,
+        "fillColor": "#d9d9d9",
+        "alignment": "right"
+    },
+        {
+        "label": "",
+        "RANGE": "D4:E4",
+        "merge": True,
+        "fillColor": "#c5e0b4",
+        "alignment": "right"
+    },
+    {
+        "label": "Country",
+        "RANGE": "B5:C5",
+        "merge": True,
+        "fillColor": "#d9d9d9",
+        "alignment": "right"
+    },
+        {
+        "label": "",
+        "RANGE": "D5:E5",
+        "merge": True,
+        "fillColor": "#c5e0b4",
+        "alignment": "right"
+    },
+    {
+        "label": "Role",
+        "RANGE": "B6:C6",
+        "merge": True,
+        "fillColor": "#d9d9d9",
+        "alignment": "right"
+    },
+        {
+        "label": "",
+        "RANGE": "D6:E6",
+        "merge": True,
+        "fillColor": "#c5e0b4",
         "alignment": "right"
     },
     {
         "label": "Partner PM rate",
-        "range": "B7:C7",
+        "RANGE": "B7:C7",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "right"
     },
-   {
+        {
         "label": "",
-        "range": "D7:E7",
+        "RANGE": "D7:E7",
         "merge": True,
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "alignment": "right"
     },
     #TABLE 1
     {
         "label": "TABLE 1",
-        "range": "B10",
-        "fillColor": "2e75b6",
+        "RANGE": "B10",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "BUDGET",
-        "range": "C10:X10",
+        "RANGE": "C10:X10",
         "merge": True,
-        "fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "0",
-        "range": "B11",
-        "fillColor": "2e75b6",
+        "RANGE": "B11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "1",
-        "range": "C11",
-        "fillColor": "2e75b6",
+        "RANGE": "C11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "2",
-        "range": "D11",
-        "fillColor": "2e75b6",
+        "RANGE": "D11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "3",
-        "range": "E11",
-        "fillColor": "2e75b6",
+        "RANGE": "E11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "4",
-        "range": "F11",
-        "fillColor": "2e75b6",
+        "RANGE": "F11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "5 (A)",
-        "range": "G11",
-        "fillColor": "2e75b6",
+        "RANGE": "G11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "6 (B)",
-        "range": "H11",
-        "fillColor": "2e75b6",
+        "RANGE": "H11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "7 (C1)",
-        "range": "I11",
-        "fillColor": "2e75b6",
+        "RANGE": "I11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "8 (C2)",
-        "range": "J11",
-        "fillColor": "2e75b6",
+        "RANGE": "J11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "9 (C3)",
-        "range": "K11",
-        "fillColor": "2e75b6",
+        "RANGE": "K11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "10 (D1)",
-        "range": "L11",
-        "fillColor": "2e75b6",
+        "RANGE": "L11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "11 (D2)",
-        "range": "M11",
-        "fillColor": "2e75b6",
+        "RANGE": "M11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "12 (E)",
-        "range": "N11",
-        "fillColor": "2e75b6",
+        "RANGE": "N11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "13",
-        "range": "O11",
-        "fillColor": "2e75b6",
+        "RANGE": "O11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "14",
-        "range": "P11",
-        "fillColor": "2e75b6",
+        "RANGE": "P11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "15",
-        "range": "Q11",
-        "fillColor": "2e75b6",
+        "RANGE": "Q11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "16",
-        "range": "R11",
-        "fillColor": "2e75b6",
+        "RANGE": "R11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "17",
-        "range": "S11",
-        "fillColor": "2e75b6",
+        "RANGE": "S11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "18",
-        "range": "T11",
-        "fillColor": "2e75b6",
+        "RANGE": "T11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "19",
-        "range": "U11",
-        "fillColor": "2e75b6",
+        "RANGE": "U11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "20",
-        "range": "W11",
-        "fillColor": "2e75b6",
+        "RANGE": "W11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "21",
-        "range": "X11",
-        "fillColor": "2e75b6",
+        "RANGE": "X11",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "No.",
-        "range": "B12",
-        "fillColor": "2e75b6",
+        "RANGE": "B12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "PIC (Partner identification code)",
-        "range": "C12",
-        "fillColor": "2e75b6",
+        "RANGE": "C12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Name of beneficiary",
-        "range": "D12",
-        "fillColor": "2e75b6",
+        "RANGE": "D12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Country",
-        "range": "E12",
-        "fillColor": "2e75b6",
+        "RANGE": "E12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Role",
-        "range": "F12",
-        "fillColor": "2e75b6",
+        "RANGE": "F12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Personnel costs /€",
-        "range": "G12",
-        "fillColor": "2e75b6",
+        "RANGE": "G12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Subcontractingcosts /€",
-        "range": "H12",
-        "fillColor": "2e75b6",
+        "RANGE": "H12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Travel and substistence /€",
-        "range": "I12",
-        "fillColor": "2e75b6",
+        "RANGE": "I12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Equipment /€",
-        "range": "J12",
-        "fillColor": "2e75b6",
+        "RANGE": "J12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Other goods, works and services /€",
-        "range": "K12",
-        "fillColor": "2e75b6",
+        "RANGE": "K12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Financial support to third parties /€",
-        "range": "L12",
-        "fillColor": "2e75b6",
+        "RANGE": "L12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Internally invoiced goods and services /€(Unit costs- usual accounting practices)",
-        "range": "M12",
-        "fillColor": "2e75b6",
+        "RANGE": "M12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Indirect Costs /€",
-        "range": "N12",
-        "fillColor": "2e75b6",
+        "RANGE": "N12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Total eligible costs /€",
-        "range": "O12",
-        "fillColor": "2e75b6",
+        "RANGE": "O12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Funding rate",
-        "range": "P12",
-        "fillColor": "2e75b6",
+        "RANGE": "P12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Maximum EU contribution to eligible costs /€",
-        "range": "Q12",
-        "fillColor": "2e75b6",
+        "RANGE": "Q12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Requested EU contribution to eligible costs /€",
-        "range": "R12",
-        "fillColor": "2e75b6",
+        "RANGE": "R12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Max grant amount",
-        "range": "S12",
-        "fillColor": "2e75b6",
+        "RANGE": "S12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Income generated by the action",
-        "range": "T12",
-        "fillColor": "2e75b6",
+        "RANGE": "T12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Financial contributions",
-        "range": "U12",
-        "fillColor": "2e75b6",
+        "RANGE": "U12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Own resources",
-        "range": "W12",
-        "fillColor": "2e75b6",
+        "RANGE": "W12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Total estimated income",
-        "range": "X12",
-        "fillColor": "2e75b6",
+        "RANGE": "X12",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "B13",
+        "RANGE": "B13",
         "formula": "=D2",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },
+        {
+        "label": "",
+        "RANGE": "C13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "C13",
+        "RANGE": "D13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "D13",
+        "RANGE": "E13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "E13",
+        "RANGE": "F13",
         "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "F13",
-        "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },    {
         "label": "",
-        "range": "G13",
+        "RANGE": "G13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "H13",
+        "RANGE": "H13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "i13",
+        "RANGE": "I13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "j13",
+        "RANGE": "J13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "k13",
+        "RANGE": "K13",
         "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "l13",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "m13",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "n13",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "o13",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "p13",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "q13",
-        "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "r13",
+        "RANGE": "L13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "s13",
+        "RANGE": "M13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "t13",
+        "RANGE": "N13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "u13",
+        "RANGE": "O13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "v13",
+        "RANGE": "P13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "W13",
+        "RANGE": "Q13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },{
         "label": "",
-        "range": "X13",
+        "RANGE": "R13",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "S13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "T13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "U13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "V13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "W13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },{
+        "label": "",
+        "RANGE": "X13",
+        "formula": "",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "G14",
+        "RANGE": "G14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "H14",
+        "RANGE": "H14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
+        "alignment": "center"
+    },
+        {
+        "label": "",
+        "RANGE": "I14",
+        "formula": "",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "I14",
-        "formula": "",
-        "fillColor": "d9d9d9",
-        "alignment": "center"
-    },
-    {
-        "label": "",
-        "range": "J14",
+        "RANGE": "J14",
         "formula": "=D7",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "K14",
+        "RANGE": "K14",
         "formula": "=D7",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "L14",
+        "RANGE": "L14",
         "formula": "=D7",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "M14",
+        "RANGE": "M14",
         "formula": "=D7",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "N14",
+        "RANGE": "N14",
         "formula": "=D7",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "O14",
+        "RANGE": "O14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "P14",
+        "RANGE": "P14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "Q14",
+        "RANGE": "Q14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "R14",
+        "RANGE": "R14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "S14",
+        "RANGE": "S14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "T14",
+        "RANGE": "T14",
         "formula": "",
         "fillColor": "d9d9d94",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "U14",
+        "RANGE": "U14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "W14",
+        "RANGE": "W14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "X14",
+        "RANGE": "X14",
         "formula": "",
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     # TABLE 2
     {
         "label": "TABLE 2",
-        "range": "B16",
-		"fillColor": "2e75b6",
+        "RANGE": "B16",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Number of Person-Months (PMs) across Work-Packages (WP)s",
-        "range": "C16:N16",
+        "RANGE": "C16:N16",
         "merge": True,
-		"fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Sum / WPs",
-		"fillColor": "9dc3e6",
-        "range": "B17",
-		"alignment": "center"
+        "fillColor": "#9dc3e6",
+        "RANGE": "B17",
+        "alignment": "center"
     },
     {
         "label": "1",
-        "range": "C17",
-        "fillColor": "9dc3e6",
+        "RANGE": "C17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "2",
-        "range": "D17",
-        "fillColor": "9dc3e6",
+        "RANGE": "D17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "3",
-        "range": "E17",
-        "fillColor": "9dc3e6",
+        "RANGE": "E17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "4",
-        "range": "F17",
-        "fillColor": "9dc3e6",
+        "RANGE": "F17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "5",
-        "range": "G17",
-        "fillColor": "9dc3e6",
+        "RANGE": "G17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "6",
-        "range": "H17",
-        "fillColor": "9dc3e6",
+        "RANGE": "H17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "7",
-        "range": "I17",
-        "fillColor": "9dc3e6",
+        "RANGE": "I17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "8",
-        "range": "J17",
-        "fillColor": "9dc3e6",
+        "RANGE": "J17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "9",
-        "range": "K17",
-        "fillColor": "9dc3e6",
+        "RANGE": "K17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "10",
-        "range": "L17",
-        "fillColor": "9dc3e6",
+        "RANGE": "L17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "11",
-        "range": "M17",
-        "fillColor": "9dc3e6",
+        "RANGE": "M17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "12",
-        "range": "N17",
-        "fillColor": "9dc3e6",
+        "RANGE": "N17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "13",
-        "range": "O17",
-        "fillColor": "9dc3e6",
+        "RANGE": "O17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "14",
-        "range": "P17",
-        "fillColor": "9dc3e6",
+        "RANGE": "P17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "15",
-        "range": "Q17",
-        "fillColor": "9dc3e6",
+        "RANGE": "Q17",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
-	#TABLE B
-    {
+    #TABLE B    {
         "label": "Table B",
-        "range": "B20",
-        "fillColor": "2e75b6",
+        "RANGE": "B20",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "Subcontracting",
-        "range": "C20:H20",
+        "RANGE": "C20:H20",
         "merge": True,
-        "fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "No. in T-1",
-        "range": "B21",
-        "fillColor": "9dc3e6",
+        "RANGE": "B21",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Cost category B",
-        "range": "C21",
-        "fillColor": "9dc3e6",
+        "RANGE": "C21",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
-	    {
+        {
         "label": "Subcontractor name ( if known)",
-        "range": "D21:E21",
+        "RANGE": "D21:E21",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
-	    {
+        {
         "label": "Sum",
-        "range": "F21",
-        "fillColor": "9dc3e6",
+        "RANGE": "F21",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
-	    {
+        {
         "label": "Explanation of function/role",
-        "range": "G21:H21",
+        "RANGE": "G21:H21",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
-	{
+        {
         "label": "6",
-        "range": "B22",
-        "fillColor": "d9d9d9",
+        "RANGE": "B22",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+        {
         "label": "6",
-        "range": "B23",
-        "fillColor": "d9d9d9",
+        "RANGE": "B23",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },    {
         "label": "Subcontract 1",
-        "range": "C22",
-        "fillColor": "d9d9d9",
+        "RANGE": "C22",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "D22:E22",
+        "RANGE": "D22:E22",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "",
-        "range": "F22",
+        "RANGE": "F22",
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
         {
         "label": "",
-        "range": "G22:H22",
+        "RANGE": "G22:H22",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },    {
         "label": "Subcontract 2",
-        "range": "C23",
-        "fillColor": "d9d9d9",
+        "RANGE": "C23",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
             {
         "label": "",
-        "range": "D23:E23",
+        "RANGE": "D23:E23",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "",
-        "range": "F23",
+        "RANGE": "F23",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
             "type": "currency",
-            "symbol": "€",
+            "symbol": "€",  # Or "$"
             "decimalPlaces": 2
         }
     },
-   {
+        {
         "label": "",
-        "range": "G23:H23",
+        "RANGE": "G23:H23",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "Total",
-        "range": "C24",
-        "fillColor": "2e75b6",
+        "RANGE": "C24",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "D24:F24",
+        "RANGE": "D24:F24",
         "formula": "=SUM(F22:F23)",
         "alignment": "right",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     },
-	#TABLE C    {
-    {
+    #TABLE C    {
         "label": "Table C",
-        "range": "B26",
-        "fillColor": "2e75b6",
+        "RANGE": "B26",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
         {
         "label": "Purchase costs",
-        "range": "C26:H26",
+        "RANGE": "C26:H26",
         "merge": True,
-        "fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "No. in T-1",
-        "range": "B27",
-        "fillColor": "9dc3e6",
+        "RANGE": "B27",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Cost category D",
-        "range": "C27",
-        "fillColor": "9dc3e6",
+        "RANGE": "C27",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
      {
         "label": "Name",
-        "range": "D27:E27",
+        "RANGE": "D27:E27",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Sum",
-        "range": "F27",
-        "fillColor": "9dc3e6",
+        "RANGE": "F27",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Explanation of function/role",
-        "range": "G27:H27",
+        "RANGE": "G27:H27",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "7",
-        "range": "B28",
-        "fillColor": "d9d9d9",
+        "RANGE": "B28",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "8",
-        "range": "B29",
-        "fillColor": "d9d9d9",
+        "RANGE": "B29",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "9",
-        "range": "B30",
-        "fillColor": "d9d9d9",
+        "RANGE": "B30",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "C1",
-        "range": "C28",
-        "fillColor": "d9d9d9",
+        "RANGE": "C28",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "C2",
-        "range": "C29",
-        "fillColor": "d9d9d9",
+        "RANGE": "C29",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "C3",
-        "range": "C30",
-        "fillColor": "d9d9d9",
+        "RANGE": "C30",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
 
-	{
+    {
         "label": "Travel and substistence /€",
-        "range": "D28:E28",
-		"merge": True,
-        "fillColor": "d9d9d9",
+        "RANGE": "D28:E28",
+        "merge": True,
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "F28",
+        "RANGE": "F28",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
             "type": "currency",
-            "symbol": "€",
+            "symbol": "€",  # Or "$"
             "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G28:H28",
+        "RANGE": "G28:H28",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "Equipment /€",
-        "range": "D29:E29",
-    	"merge": True,
-        "fillColor": "d9d9d9",
+        "RANGE": "D29:E29",
+        "merge": True,
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "F29",
+        "RANGE": "F29",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
             "type": "currency",
-            "symbol": "€",
+            "symbol": "€",  # Or "$"
             "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G29:H29",
+        "RANGE": "G29:H29",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "Other goods, works and services /€",
-        "range": "D30:E30",
+        "RANGE": "D30:E30",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "F30",
+        "RANGE": "F30",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
             "type": "currency",
-            "symbol": "€",
+            "symbol": "€",  # Or "$"
             "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G30:H30",
+        "RANGE": "G30:H30",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "Total",
-        "range": "C31",
+        "RANGE": "C31",
         "alignment": "center",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     },
                 {
         "label": "",
-        "range": "D31:F31",
+        "RANGE": "D31:F31",
         "formula": "=SUM(F28:F30)",
         "alignment": "right",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     },
     # TABLE D
     {
         "label": "Table D",
-        "range": "B33",
-        "fillColor": "2e75b6",
+        "RANGE": "B33",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
-	{
+    {
         "label": "Other cost categories",
-        "range": "C33:H33",
+        "RANGE": "C33:H33",
         "merge": True,
-        "fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
-	{
+    {
         "label": "No. in T-1",
-        "range": "B34",
-        "fillColor": "9dc3e6",
+        "RANGE": "B34",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Cost category D",
-        "range": "C34",
-        "fillColor": "9dc3e6",
+        "RANGE": "C34",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
      {
         "label": "Name",
-        "range": "D34:E34",
+        "RANGE": "D34:E34",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Sum",
-        "range": "F34",
-        "fillColor": "9dc3e6",
+        "RANGE": "F34",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Explanation of function/role",
-        "range": "G34:H34",
+        "RANGE": "G34:H34",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "10",
-        "range": "B35",
-        "fillColor": "d9d9d9",
+        "RANGE": "B35",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "11",
-        "range": "B36",
-        "fillColor": "d9d9d9",
+        "RANGE": "B36",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "D1",
-        "range": "C35",
-        "fillColor": "d9d9d9",
+        "RANGE": "C35",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-	{
+    {
         "label": "D2",
-        "range": "C36",
-        "fillColor": "d9d9d9",
+        "RANGE": "C36",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
-{
+    {
         "label": "Financial support to third parties /€",
-        "range": "D35:E35",
+        "RANGE": "D35:E35",
         "merge": True,
-        "fillColor": "d9d9d9",
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "F35",
+        "RANGE": "F35",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
         "type": "currency",
-        "symbol": "€",
+        "symbol": "€",  # Or "$"
         "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G35:H35",
+        "RANGE": "G35:H35",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
-	{
-        "label": "Internally invoiced goods & services (Unit costs- usual"
-        " accounting practices)  /€  ",
-        "range": "D36:E36",
-		"merge": True,
-        "fillColor": "d9d9d9",
+    {
+        "label": "Internally invoiced goods & services (Unit costs- usual accounting practices)  /€  ",
+        "RANGE": "D36:E36",
+        "merge": True,
+        "fillColor": "#d9d9d9",
         "alignment": "center"
     },
     {
         "label": "",
-        "range": "F36",
+        "RANGE": "F36",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
         "type": "currency",
-        "symbol": "€",
+        "symbol": "€",  # Or "$"
         "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G36:H36",
+        "RANGE": "G36:H36",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
         {
             "label": "Total",
-            "range": "C37",
+            "RANGE": "C37",
             "alignment": "center",
-            "fillColor": "2e75b6"
+            "fillColor": "#2e75b6"
         },
         {
         "label": "",
-        "range": "D37:F37",
+        "RANGE": "D37:F37",
         "formula": "=SUM(F35:F36)",
         "alignment": "right",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     },
         # TABLE X
         {
             "label": "Table X",
-            "range": "B40",
-            "fillColor": "2e75b6",
+            "RANGE": "B40",
+            "fillColor": "#2e75b6",
             "alignment": "center"
     },
     {
         "label": "Other Explanations of Table 1",
-        "range": "C40:H40",
+        "RANGE": "C40:H40",
         "merge": True,
-        "fillColor": "2e75b6",
+        "fillColor": "#2e75b6",
         "alignment": "center"
     },
     {
         "label": "No. in T-1",
-        "range": "B41",
-        "fillColor": "9dc3e6"
+        "RANGE": "B41",
+        "fillColor": "#9dc3e6"
     },
     {
         "label": "Cost category",
-        "range": "C41",
-        "fillColor": "9dc3e6"
+        "RANGE": "C41",
+        "fillColor": "#9dc3e6"
     },
     {
         "label": "Costs category name",
-        "range": "D41:E41",
+        "RANGE": "D41:E41",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Sum",
-        "range": "F41",
-        "fillColor": "9dc3e6",
+        "RANGE": "F41",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "Explanation",
-        "range": "G41:H41",
+        "RANGE": "G41:H41",
         "merge": True,
-        "fillColor": "9dc3e6",
+        "fillColor": "#9dc3e6",
         "alignment": "center"
     },
     {
         "label": "18",
-        "range": "B42",
+        "RANGE": "B42",
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "",
-        "range": "C42",
+        "RANGE": "C42",
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "Income generated by the action",
-        "range": "D42:E42",
+        "RANGE": "D42:E42",
         "merge": True,
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "",
-        "range": "F42",
+        "RANGE": "F42",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
-        "type": "currency",
-        "symbol": "€",
-        "decimalPlaces": 2
+            "type": "currency",
+            "symbol": "€",  # Or "$"
+            "decimalPlaces": 2
         }
     },
-    {
+        {
         "label": "",
-        "range": "G42:H42",
+        "RANGE": "G42:H42",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "19",
-        "range": "B43",
+        "RANGE": "B43",
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "",
-        "range": "C43",
+        "RANGE": "C43",
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "Financial contributions",
-        "range": "D43:E43",
+        "RANGE": "D43:E43",
         "merge": True,
         "alignment": "center",
-        "fillColor": "d9d9d9"
+        "fillColor": "#d9d9d9"
+    },
+        {
+        "label": "",
+        "RANGE": "F43",
+        "alignment": "right",
+        "fillColor": "#c5e0b4",
+        "numberFormat": {
+            "type": "currency",
+            "symbol": "€",  # Or "$"
+            "decimalPlaces": 2
+        }
+    },
+        {
+        "label": "",
+        "RANGE": "G43:H43",
+        "merge": True,
+        "alignment": "right",
+        "fillColor": "#c5e0b4"
+    },
+    {
+        "label": "20",
+        "RANGE": "B44",
+        "alignment": "center",
+        "fillColor": "#d9d9d9"
     },
     {
         "label": "",
-        "range": "F43",
+        "RANGE": "C44",
+        "alignment": "center",
+        "fillColor": "#d9d9d9"
+    },
+    
+    {
+        "label": "",
+        "RANGE": "F44",
         "alignment": "right",
-        "fillColor": "c5e0b4",
+        "fillColor": "#c5e0b4",
         "numberFormat": {
         "type": "currency",
-        "symbol": "€",
+        "symbol": "€",  # Or "$"
         "decimalPlaces": 2
         }
     },
         {
         "label": "",
-        "range": "G43:H43",
+        "RANGE": "G44:H44",
         "merge": True,
         "alignment": "right",
-        "fillColor": "c5e0b4"
-    },
-    {
-        "label": "20",
-        "range": "B44",
-        "alignment": "center",
-        "fillColor": "d9d9d9"
-    },
-    {
-        "label": "",
-        "range": "C44",
-        "alignment": "center",
-        "fillColor": "d9d9d9"
-    },
-    {
-        "label": "",
-        "range": "F44",
-        "alignment": "right",
-        "fillColor": "c5e0b4",
-        "numberFormat": {
-        "type": "currency",
-        "symbol": "€",
-        "decimalPlaces": 2
-        }
-    },
-    {
-        "label": "",
-        "range": "G44:H44",
-        "merge": True,
-        "alignment": "right",
-        "fillColor": "c5e0b4"
+        "fillColor": "#c5e0b4"
     },
     {
         "label": "Total",
-        "range": "C45",
+        "RANGE": "C45",
         "alignment": "center",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     },
     {
         "label": "",
-        "range": "D45:F45",
+        "RANGE": "D45:F45",
         "formula": "=SUM(F42:F44)",
         "alignment": "right",
-        "fillColor": "2e75b6"
+        "fillColor": "#2e75b6"
     }
 ]
+# Centralized row height settings (row number: height in points)
 ROW_HEIGHTS = {
-            12: 128.88
-        }
+    12: 128.88
+}
+
+# Centralized column width settings (column letter: width in Excel units)
+# 1 Excel column width unit ≈ 0.14 inch (approximate, varies by font)
+# 1.26" ≈ 9 units, 1.95" ≈ 14 units
 COLUMN_WIDTHS = {
-            'C': 9,
-            'D': 14
-        }
+    'C': 9,
+    'D': 14
+}

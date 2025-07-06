@@ -1,0 +1,58 @@
+# Centralized color definitions
+COLORS = {
+    'header_blue': '#2e75b6',
+    'light_blue': '#9dc3e6',
+    'gray': '#d9d9d9',
+    'green': '#c5e0b4'
+}
+
+# Centralized currency format
+CURRENCY_FORMAT = {
+    'type': 'currency',
+    'symbol': '€',  # Or "$"
+    'decimalPlaces': 2
+}
+
+# Centralized row height settings (row number: height in points)
+ROW_HEIGHTS = {
+    12: 128.88
+}
+
+# Centralized column width settings (column letter: width in Excel units)
+# 1 Excel column width unit ≈ 0.14 inch (approximate, varies by font)
+# 1.26" ≈ 9 units, 1.95" ≈ 14 units
+COLUMN_WIDTHS = {
+    'C': 9,
+    'D': 14
+}
+
+def get_cell_format(*, label="", range_str, merge=False, fill_color=None, alignment=None, formula=None, number_format=None):
+    """Helper function to create cell format with consistent structure"""
+    cell_format = {
+        "label": label,
+        "range": range_str
+    }
+    
+    if merge:
+        cell_format["merge"] = True
+    if fill_color:
+        cell_format["fillColor"] = fill_color
+    if alignment:
+        cell_format["alignment"] = alignment
+    if formula:
+        cell_format["formula"] = formula
+    if number_format:
+        cell_format["numberFormat"] = number_format
+        
+    return cell_format
+
+PARTNER_TABLE_FORMAT = [
+    {
+        "label": "Partner Number Label",
+        "range": "B2:C2",
+        "merge": True,
+        "fillColor": COLORS['gray'],
+        "alignment": "right"
+    },
+    # ... rest of the table format definitions
+]
