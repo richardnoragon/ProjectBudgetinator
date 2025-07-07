@@ -538,13 +538,145 @@ class ProjectBudgetinator:
         dialog.geometry(f"+{x}+{y}")
 
     def add_workpackage(self):
-        pass
+        """Open a dialog to add a new workpackage to the project."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(file_path)
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    return
+            else:
+                return
+        
+        # Check if PM Summary sheet exists
+        if "PM Summary" not in self.current_workbook.sheetnames:
+            messagebox.showerror(
+                "Error",
+                "This workbook does not contain a 'PM Summary' sheet"
+            )
+            return
+            
+        # Show the AddWorkpackageDialog
+        from handlers.add_workpackage_handler import AddWorkpackageDialog
+        dialog = AddWorkpackageDialog(self.root, self.current_workbook)
+        
+        # Wait for dialog
+        self.root.wait_window(dialog.dialog)
+        
+        if dialog.result:
+            # Ask user where to save the workbook
+            try:
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Workbook",
+                    defaultextension=".xlsx",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if save_path:
+                    self.current_workbook.save(save_path)
+                    messagebox.showinfo(
+                        "Success",
+                        f"Added workpackage in row {dialog.result['row']}\n"
+                        f"Workbook saved to: {save_path}"
+                    )
+                else:
+                    messagebox.showwarning(
+                        "Warning",
+                        "Workpackage added but workbook not saved!"
+                    )
+            except Exception as e:
+                messagebox.showerror(
+                    "Error",
+                    f"Failed to save workbook:\n{str(e)}"
+                )
 
     def delete_workpackage(self):
         pass
 
     def edit_workpackage(self):
-        pass
+        """Open a dialog to edit a workpackage."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(file_path)
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    return
+            else:
+                return
+        
+        # Check if PM Summary sheet exists
+        if "PM Summary" not in self.current_workbook.sheetnames:
+            messagebox.showerror(
+                "Error",
+                "This workbook does not contain a 'PM Summary' sheet"
+            )
+            return
+            
+        # Show the EditWorkpackageDialog
+        from handlers.edit_workpackage_handler import EditWorkpackageDialog
+        dialog = EditWorkpackageDialog(self.root, self.current_workbook)
+        
+        # Wait for dialog
+        self.root.wait_window(dialog.dialog)
+        
+        if dialog.result:
+            # Ask user where to save the workbook
+            try:
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Workbook",
+                    defaultextension=".xlsx",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if save_path:
+                    self.current_workbook.save(save_path)
+                    messagebox.showinfo(
+                        "Success",
+                        f"Updated workpackage in row {dialog.result['row']}\n"
+                        f"Workbook saved to: {save_path}"
+                    )
+                else:
+                    messagebox.showwarning(
+                        "Warning",
+                        "Workpackage updated but workbook not saved!"
+                    )
+            except Exception as e:
+                messagebox.showerror(
+                    "Error",
+                    f"Failed to save workbook:\n{str(e)}"
+                )
 
     def _setup_preferences_menu(self, menubar):
         """Set up the Preferences menu."""
