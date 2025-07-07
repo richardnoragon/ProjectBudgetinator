@@ -322,7 +322,220 @@ class ProjectBudgetinator:
         dialog.geometry(f"+{x}+{y}")
 
     def edit_partner(self):
-        pass
+        """Open a dialog to select a partner (P > 2) for editing."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(file_path)
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    return
+            else:
+                return
+
+        # Get list of partner sheets (P + integer > 2)
+        partner_sheets = []
+        for sheet in self.current_workbook.sheetnames:
+            if sheet.startswith('P') and len(sheet) > 1:
+                parts = sheet[1:].split()
+                if parts and parts[0].isdigit() and int(parts[0]) > 2:
+                    partner_sheets.append(sheet)
+
+        if not partner_sheets:
+            messagebox.showinfo(
+                "No Partners",
+                "No eligible partner sheets (P > 2) found in the workbook."
+            )
+            return
+
+        # Create the dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Edit Partner")
+        dialog.grab_set()
+
+        # Instructions label
+        instructions = tk.Label(
+            dialog,
+            text="Select a partner to edit:",
+            font=("Arial", 10, "bold")
+        )
+        instructions.pack(pady=(10, 5))
+
+        # Partner listbox
+        listbox = tk.Listbox(dialog, width=40, height=10)
+        listbox.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+
+        # Populate listbox
+        for sheet in partner_sheets:
+            listbox.insert(tk.END, sheet)
+
+        def on_edit():
+            selection = listbox.curselection()
+            if selection:
+                selected_sheet = partner_sheets[selection[0]]
+                dialog.destroy()
+                # Extract partner number and acronym from the sheet name
+                parts = selected_sheet[1:].split()
+                partner_number = parts[0] if parts else ''
+                partner_acronym = ' '.join(parts[1:]) if len(parts) > 1 else ''
+
+                ws = self.current_workbook[selected_sheet]
+                # Create debug window first
+                debug_win = tk.Toplevel(self.root)
+                debug_win.title("Debug Info - Partner Values")
+                debug_win.geometry("600x400")
+                
+                # Create text widget for debug output
+                debug_text = tk.Text(debug_win, wrap="word")
+                debug_text.pack(fill="both", expand=True)
+                
+                # Add scrollbar to debug window
+                scrollbar = tk.Scrollbar(debug_win, command=debug_text.yview)
+                scrollbar.pack(side="right", fill="y")
+                debug_text.config(yscrollcommand=scrollbar.set)
+
+                debug_text.insert("end", f"Selected sheet: {selected_sheet}\n")
+                debug_text.insert("end", f"Partner number: {partner_number}\n")
+                debug_text.insert("end", f"Partner acronym: {partner_acronym}\n\n")
+
+                # Try to extract values from the worksheet
+                partner_info = {}
+                # These cell mappings should match those used in add_partner_to_workbook
+                cell_map = {
+                    'partner_identification_code': 'D4',
+                    'name_of_beneficiary': 'D5',
+                    'country': 'D6',
+                    'role': 'D7',
+                    'name_subcontractor_1': 'D20',
+                    'sum_subcontractor_1': 'D21',
+                    'explanation_subcontractor_1': 'D22',
+                    'name_subcontractor_2': 'D24',
+                    'sum_subcontractor_2': 'D25',
+                    'explanation_subcontractor_2': 'D26',
+                    'sum_travel': 'F28',
+                    'sum_equipment': 'F29',
+                    'sum_other': 'F30',
+                    'sum_financial_support': 'F31',
+                    'sum_internal_goods': 'F32',
+                    'sum_income_generated': 'F33',
+                    'sum_financial_contributions': 'F34',
+                    'sum_own_resources': 'F35',
+                    'explanation_financial_support': 'G36',
+                    'explanation_internal_goods': 'G37',
+                    'explanation_income_generated': 'G38',
+                    'explanation_financial_contributions': 'G39',
+                    'explanation_own_resources': 'G40',
+                }
+                # WP fields
+                debug_text.insert("end", "\nReading WP fields:\n")
+                for i in range(1, 16):
+                    col = chr(ord('C') + i - 1)
+                    cell = f'{col}18'
+                    debug_text.insert("end", f"Reading cell {cell}... ")
+                    try:
+                        value = ws[cell].value
+                        partner_info[f'wp{i}'] = value if value is not None else ''
+                        debug_text.insert("end", f"found value: {value}\n")
+                    except Exception as e:
+                        debug_text.insert("end", f"error: {str(e)}\n")
+                        partner_info[f'wp{i}'] = ''
+
+                # Other fields
+                debug_text.insert("end", "\nReading other fields:\n")
+                for key, cell in cell_map.items():
+                    debug_text.insert("end", f"Reading {key} from {cell}... ")
+                    try:
+                        value = ws[cell].value
+                        partner_info[key] = value if value is not None else ''
+                        debug_text.insert("end", f"found value: {value}\n")
+                    except Exception as e:
+                        debug_text.insert("end", f"error: {str(e)}\n")
+                        partner_info[key] = ''
+                # Add partner number and acronym
+                partner_info['project_partner_number'] = partner_number
+                partner_info['partner_acronym'] = partner_acronym
+
+                # Log all collected values
+                debug_text.insert("end", "\nFinal collected values:\n")
+                for key, value in partner_info.items():
+                    debug_text.insert("end", f"{key}: {value}\n")
+                debug_text.see("end")
+
+                # Show the EditPartnerDialog with pre-filled values
+                from handlers.edit_partner_handler import EditPartnerDialog
+                
+                debug_text.insert("end", "\nCreating EditPartnerDialog...\n")
+                dialog2 = EditPartnerDialog(
+                    self.root,
+                    partner_number,
+                    partner_acronym,
+                    initial_values=partner_info
+                )
+                
+                debug_text.insert("end", "Waiting for dialog...\n")
+                debug_text.see("end")
+                
+                # Wait for dialog
+                self.root.wait_window(dialog2)
+                debug_win.destroy()
+                if dialog2.result:
+                    # Here you would update the worksheet with new values
+                    # Placeholder: just show a message
+                    messagebox.showinfo(
+                        "Edit Partner",
+                        f"Partner {partner_number} ({partner_acronym}) updated (not yet saved)."
+                    )
+            else:
+                messagebox.showwarning(
+                    "No Selection",
+                    "Please select a partner to edit."
+                )
+
+        def on_cancel():
+            dialog.destroy()
+
+        # Button frame
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=8)
+
+        # Edit and Cancel buttons
+        edit_btn = tk.Button(
+            btn_frame,
+            text="Edit",
+            command=on_edit
+        )
+        edit_btn.pack(side=tk.LEFT, padx=4)
+
+        cancel_btn = tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=on_cancel
+        )
+        cancel_btn.pack(side=tk.LEFT, padx=4)
+
+        # Center the dialog
+        dialog.update_idletasks()
+        w = dialog.winfo_width()
+        h = dialog.winfo_height()
+        x = self.root.winfo_x() + (self.root.winfo_width() - w) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - h) // 2
+        dialog.geometry(f"+{x}+{y}")
 
     def add_workpackage(self):
         pass
