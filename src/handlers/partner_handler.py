@@ -369,40 +369,26 @@ def add_partner_to_workbook(workbook, partner_info):
         ws[label_cell] = label
         ws[value_cell] = partner_info.get(field_key, '')
 
-    # Apply table formatting
+    # First pass: Apply merges and styling only
     for format_item in PARTNER_TABLE_FORMAT:
-        # Get formatting properties
         range_str = format_item['range']
         merge = format_item.get('merge', False)
         fill_color = format_item.get('fillColor')
         alignment = format_item.get('alignment')
-        label = format_item.get('label')
-        formula = format_item.get('formula')
         number_format = format_item.get('numberFormat')
 
         # Split range into cells or use as single cell
         if ':' in range_str:
-            start_cell, end_cell = range_str.split(':')
             if merge:
                 ws.merge_cells(range_str)
             cells = []
             for row in ws[range_str]:
                 cells.extend(row)
-            target_cell = ws[start_cell]
         else:
             cells = [ws[range_str]]
-            target_cell = ws[range_str]
-
-        # Apply label or formula
-        if formula:
-            target_cell.value = formula
-        # Use is not None because empty string is valid
-        elif label is not None:
-            target_cell.value = label
 
         # Apply styling to all cells in range
         for cell in cells:
-            # Fill color
             if fill_color:
                 cell.fill = PatternFill(
                     start_color=fill_color,
@@ -410,7 +396,6 @@ def add_partner_to_workbook(workbook, partner_info):
                     fill_type='solid'
                 )
             
-            # Alignment
             if alignment:
                 cell.alignment = Alignment(
                     horizontal=alignment,
@@ -418,11 +403,50 @@ def add_partner_to_workbook(workbook, partner_info):
                     wrap_text=True
                 )
             
-            # Number format
             if number_format:
                 if number_format['type'] == 'currency':
                     fmt = f'#,##0.00 {number_format["symbol"]}'
                     cell.number_format = fmt
+
+    # Second pass: Apply labels/formulas, avoiding data overwrites
+    skip_ranges = {
+        'D2': True,  # Partner Number
+        'D3': True,  # Partner Acronym
+        'D4': True,  # Partner ID Code
+        'D5': True,  # Name of Beneficiary
+        'D6': True,  # Country
+        'D7': True,  # Role
+        'C18': True, 'D18': True, 'E18': True, 'F18': True,  # WP values
+        'G18': True, 'H18': True, 'I18': True, 'J18': True,
+        'K18': True, 'L18': True, 'M18': True, 'N18': True,
+        'O18': True, 'P18': True, 'Q18': True,
+        'D20': True, 'D21': True, 'D22': True,  # Subcontractor 1
+        'D24': True, 'D25': True, 'D26': True,  # Subcontractor 2
+        'F28': True, 'F29': True, 'F30': True,  # Financial values
+        'F31': True, 'F32': True, 'F33': True,
+        'F34': True, 'F35': True,
+        'G36': True, 'G37': True, 'G38': True,  # Explanations
+        'G39': True, 'G40': True
+    }
+
+    for format_item in PARTNER_TABLE_FORMAT:
+        range_str = format_item['range']
+        label = format_item.get('label')
+        formula = format_item.get('formula')
+
+        # Get target cell for label/formula
+        if ':' in range_str:
+            target_cell = ws[range_str.split(':')[0]]
+        else:
+            target_cell = ws[range_str]
+
+        # Only apply label/formula if cell is not in skip_ranges
+        cell_coord = target_cell.coordinate
+        if cell_coord not in skip_ranges:
+            if formula:
+                target_cell.value = formula
+            elif label is not None:
+                target_cell.value = label
 
     # Update version history
     update_version_history(workbook, f"Added partner: {sheet_name}")

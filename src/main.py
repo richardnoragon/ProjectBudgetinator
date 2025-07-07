@@ -215,7 +215,111 @@ class ProjectBudgetinator:
                     )
 
     def delete_partner(self):
-        pass
+        """Open a dialog to delete a partner from the project."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(file_path)
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    return
+            else:
+                return
+
+        # Get list of partner sheets (those starting with P followed by a number, excluding P1)
+        partner_sheets = []
+        for sheet in self.current_workbook.sheetnames:
+            if (sheet.startswith('P') and 
+                len(sheet) > 1 and 
+                sheet[1:].split()[0].isdigit() and 
+                not sheet.startswith('P1 ')):
+                partner_sheets.append(sheet)
+
+        if not partner_sheets:
+            messagebox.showinfo(
+                "No Partners",
+                "No partner sheets found in the workbook."
+            )
+            return
+
+        # Create the dialog
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Delete Partner")
+        dialog.grab_set()
+
+        # Instructions label
+        instructions = tk.Label(
+            dialog,
+            text="Select a partner to delete:",
+            font=("Arial", 10, "bold")
+        )
+        instructions.pack(pady=(10, 5))
+
+        # Partner listbox
+        listbox = tk.Listbox(dialog, width=40, height=10)
+        listbox.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+
+        # Populate listbox
+        for sheet in partner_sheets:
+            listbox.insert(tk.END, sheet)
+
+        def on_delete():
+            # Placeholder - just close the dialog for now
+            selection = listbox.curselection()
+            if selection:
+                selected_sheet = partner_sheets[selection[0]]
+                dialog.destroy()
+            else:
+                messagebox.showwarning(
+                    "No Selection",
+                    "Please select a partner to delete."
+                )
+
+        def on_cancel():
+            dialog.destroy()
+
+        # Button frame
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=8)
+
+        # Delete and Cancel buttons
+        delete_btn = tk.Button(
+            btn_frame,
+            text="Delete",
+            command=on_delete
+        )
+        delete_btn.pack(side=tk.LEFT, padx=4)
+
+        cancel_btn = tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=on_cancel
+        )
+        cancel_btn.pack(side=tk.LEFT, padx=4)
+
+        # Center the dialog
+        dialog.update_idletasks()
+        w = dialog.winfo_width()
+        h = dialog.winfo_height()
+        x = self.root.winfo_x() + (self.root.winfo_width() - w) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - h) // 2
+        dialog.geometry(f"+{x}+{y}")
 
     def edit_partner(self):
         pass
