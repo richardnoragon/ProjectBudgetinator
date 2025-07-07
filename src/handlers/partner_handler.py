@@ -13,21 +13,21 @@ class PartnerDialog(Toplevel):
         self.title("Add Partner Details")
         self.resizable(False, False)
         self.result = None
-        self.partner_number = partner_number
-        self.partner_acronym = partner_acronym
+
         self.vars = {}
-        
-        # Debug output to verify initialization
-        print(f"\nDEBUG - Initializing dialog with:")
-        print(f"  Partner Number: {partner_number}")
-        print(f"  Partner Acronym: {partner_acronym}")
-        
+        # Display Partner Number and Acronym (readonly)
+        Label(self, text="Partner Number and Acronym:").grid(row=0, column=0, sticky="w", padx=8, pady=2)
+        self.vars['partner_number_acronym'] = StringVar(value=f"{partner_number}, {partner_acronym}")
+        entry = Entry(self, textvariable=self.vars['partner_number_acronym'], width=32, state='readonly')
+        entry.grid(row=0, column=1, padx=8, pady=2, columnspan=3)
+
+        # The rest of the fields
         fields_col1 = [
             ("partner_identification_code", "Partner ID Code"),
             ("name_of_beneficiary", "Name of Beneficiary"),
             ("country", "Country"),
             ("role", "Role")
-        ]  # Field names match the label_to_key dictionary in add_partner_to_workbook
+        ]
         fields_col2 = [
             ("wp1", "WP1"),
             ("wp2", "WP2"),
@@ -66,16 +66,14 @@ class PartnerDialog(Toplevel):
             ("explanation_financial_contributions","Financial contributions"),
             ("explanation_own_resources","Own resources")
         ]
-        row0 = 0
-        Label(self, text=f"Partner Number: {partner_number}").grid(row=row0, column=0, sticky="w", padx=8, pady=2)
-        Label(self, text=f"Partner Acronym: {partner_acronym}").grid(row=row0+1, column=0, sticky="w", padx=8, pady=2)
+        row0 = 1
 
         # First column (ends with Role)
         for i, (key, label) in enumerate(fields_col1):
-            Label(self, text=label+":").grid(row=i+2, column=0, sticky="w", padx=8, pady=2)
+            Label(self, text=label+":").grid(row=i+row0+1, column=0, sticky="w", padx=8, pady=2)
             var = StringVar()
             entry = Entry(self, textvariable=var, width=32)
-            entry.grid(row=i+2, column=1, padx=8, pady=2)
+            entry.grid(row=i+row0+1, column=1, padx=8, pady=2)
             self.vars[key] = var
 
         # Second column (WP1 to WP15)
@@ -95,7 +93,7 @@ class PartnerDialog(Toplevel):
             self.vars[key] = var
 
         # Place buttons below the last row of the largest column
-        max_rows = max(len(fields_col1)+2, len(fields_col2), len(fields_col3))
+        max_rows = max(len(fields_col1)+row0+1, len(fields_col2), len(fields_col3))
         btn_frame = tk.Frame(self)
         btn_frame.grid(row=max_rows, column=0, columnspan=6, pady=8)
         Button(btn_frame, text="Commit", command=self.commit).pack(side="left", padx=8)
@@ -109,7 +107,7 @@ class PartnerDialog(Toplevel):
             # First show what values we have in the dialog
             wp_values = {}
             debug_msg = ["Current dialog values:"]
-            
+
             for key, var in self.vars.items():
                 value = var.get().strip()
                 if key.startswith('wp'):
@@ -119,24 +117,59 @@ class PartnerDialog(Toplevel):
                     except ValueError:
                         wp_values[key] = 0.0
                         debug_msg.append(f"{key} = 0.0 (converted from '{value}')")
-            
+
             # Show the values we collected
             messagebox.showinfo("Debug - Dialog Values", "\n".join(debug_msg))
-            
+
+                # Get partner number and acronym from the readonly field
+            partner_number, partner_acronym = [x.strip() for x in 
+                self.vars['partner_number_acronym'].get().split(',', 1)]
+
             # Now create the result dictionary with all values
+            v = self.vars  # Shorter alias for vars
             self.result = {
-                'project_partner_number': self.partner_number,
-                'partner_acronym': self.partner_acronym,
-                'partner_identification_code': self.vars['partner_identification_code'].get(),
-                'name_of_beneficiary': self.vars['name_of_beneficiary'].get(),
-                'country': self.vars['country'].get(),
-                'role': self.vars['role'].get(),
-                'name_subcontractor_1': self.vars['name_subcontractor_1'].get(),
-                'sum_subcontractor_1': self.vars['sum_subcontractor_1'].get(),
-                'explanation_subcontractor_1': self.vars['explanation_subcontractor_1'].get(),
-                'name_subcontractor_2': self.vars['name_subcontractor_2'].get(),
-                'sum_subcontractor_2': self.vars['sum_subcontractor_2'].get(),
-                'explanation_subcontractor_2': self.vars['explanation_subcontractor_2'].get(),
+                'project_partner_number': partner_number,
+                'partner_acronym': partner_acronym,
+
+                # Basic information
+                'partner_identification_code': (
+                    v['partner_identification_code'].get()),
+                'name_of_beneficiary': v['name_of_beneficiary'].get(),
+                'country': v['country'].get(),
+                'role': v['role'].get(),
+
+                # Subcontractor information
+                'name_subcontractor_1': v['name_subcontractor_1'].get(),
+                'sum_subcontractor_1': v['sum_subcontractor_1'].get(),
+                'explanation_subcontractor_1': (
+                    v['explanation_subcontractor_1'].get()),
+                'name_subcontractor_2': v['name_subcontractor_2'].get(),
+                'sum_subcontractor_2': v['sum_subcontractor_2'].get(),
+                'explanation_subcontractor_2': (
+                    v['explanation_subcontractor_2'].get()),
+
+                # Financial information
+                'sum_travel': v['sum_travel'].get(),
+                'sum_equipment': v['sum_equipment'].get(),
+                'sum_other': v['sum_other'].get(),
+                'sum_financial_support': v['sum_financial_support'].get(),
+                'sum_internal_goods': v['sum_internal_goods'].get(),
+                'sum_income_generated': v['sum_income_generated'].get(),
+                'sum_financial_contributions': (
+                    v['sum_financial_contributions'].get()),
+                'sum_own_resources': v['sum_own_resources'].get(),
+
+                # Explanations
+                'explanation_financial_support': (
+                    v['explanation_financial_support'].get()),
+                'explanation_internal_goods': (
+                    v['explanation_internal_goods'].get()),
+                'explanation_income_generated': (
+                    v['explanation_income_generated'].get()),
+                'explanation_financial_contributions': (
+                    v['explanation_financial_contributions'].get()),
+                'explanation_own_resources': (
+                    v['explanation_own_resources'].get()),
             }
 
             # Add all WP values
@@ -158,13 +191,16 @@ class PartnerDialog(Toplevel):
 
 
 
-def add_partner_to_workbook(workbook, partner_info, dev_log=None):
+def add_partner_to_workbook(workbook, partner_info):
     """Add a partner worksheet to an Excel workbook."""
     print("DEBUG - Received partner info:")
     for key, value in partner_info.items():
         print(f"  {key}: {value}")
 
-    sheet_name = f"P{partner_info['project_partner_number']} {partner_info['partner_acronym']}"
+    sheet_name = (
+        f"P{partner_info['project_partner_number']} "
+        f"{partner_info['partner_acronym']}"
+    )
     if sheet_name in workbook.sheetnames:
         messagebox.showerror("Error", "Worksheet already exists.")
         return False
@@ -185,67 +221,83 @@ def add_partner_to_workbook(workbook, partner_info, dev_log=None):
     ws['B7'] = "Role:"
     ws['D7'] = partner_info['role']
 
-    # Write work package values
-    ws['B17'] = "Work Packages"
-    for i in range(1, 16):
-        wp_key = f'wp{i}'
-        col = chr(ord('C') + i - 1)  # C for wp1, D for wp2, etc.
-        ws[f'{col}17'] = f'WP{i}'
-        ws[f'{col}18'] = float(partner_info.get(wp_key, 0))
+    # Write WP values
+    wp_fields = {
+        'wp1': 'C18', 'wp2': 'D18', 'wp3': 'E18', 'wp4': 'F18',
+        'wp5': 'G18', 'wp6': 'H18', 'wp7': 'I18', 'wp8': 'J18',
+        'wp9': 'K18', 'wp10': 'L18', 'wp11': 'M18', 'wp12': 'N18',
+        'wp13': 'O18', 'wp14': 'P18', 'wp15': 'Q18'
+    }
+    
+    for wp_key, cell_ref in wp_fields.items():
+        value = float(partner_info.get(wp_key, 0))
+        ws[cell_ref] = value
+        ws[cell_ref].number_format = '#,##0.00'
 
     # Write subcontractor information
-    current_row = 20
-    ws[f'B{current_row}'] = "Subcontractor 1"
-    ws[f'B{current_row+1}'] = "Name:"
-    ws[f'D{current_row+1}'] = partner_info.get('name_subcontractor_1', '')
-    ws[f'B{current_row+2}'] = "Sum:"
-    ws[f'D{current_row+2}'] = partner_info.get('sum_subcontractor_1', '')
-    ws[f'B{current_row+3}'] = "Explanation:"
-    ws[f'D{current_row+3}'] = partner_info.get('explanation_subcontractor_1', '')
+    # Subcontractor 1
+    ws['B20'] = "Subcontractor 1 Name:"
+    ws['D20'] = partner_info.get('name_subcontractor_1', '')
+    ws['B21'] = "Subcontractor 1 Sum:"
+    ws['D21'] = partner_info.get('sum_subcontractor_1', '')
+    ws['B22'] = "Subcontractor 1 Explanation:"
+    ws['D22'] = partner_info.get('explanation_subcontractor_1', '')
 
-    current_row += 5
-    ws[f'B{current_row}'] = "Subcontractor 2"
-    ws[f'B{current_row+1}'] = "Name:"
-    ws[f'D{current_row+1}'] = partner_info.get('name_subcontractor_2', '')
-    ws[f'B{current_row+2}'] = "Sum:"
-    ws[f'D{current_row+2}'] = partner_info.get('sum_subcontractor_2', '')
-    ws[f'B{current_row+3}'] = "Explanation:"
-    ws[f'D{current_row+3}'] = partner_info.get('explanation_subcontractor_2', '')
+    # Subcontractor 2
+    ws['B24'] = "Subcontractor 2 Name:"
+    ws['D24'] = partner_info.get('name_subcontractor_2', '')
+    ws['B25'] = "Subcontractor 2 Sum:"
+    ws['D25'] = partner_info.get('sum_subcontractor_2', '')
+    ws['B26'] = "Subcontractor 2 Explanation:"
+    ws['D26'] = partner_info.get('explanation_subcontractor_2', '')
 
-    # Write additional financial information
-    current_row += 5
+    # Write financial information
     financial_fields = [
-        ('sum_travel', 'Travel and subsistence /€'),
-        ('sum_equipment', 'Equipment /€'),
-        ('sum_other', 'Other goods, works and services /€'),
-        ('sum_financial_support', 'Financial support to third parties /€'),
-        ('sum_internal_goods', 'Internally invoiced goods & services /€'),
-        ('sum_income_generated', 'Income generated by the action'),
-        ('sum_financial_contributions', 'Financial contributions'),
-        ('sum_own_resources', 'Own resources')
+        ('sum_travel', 'Travel and subsistence /€', 'D28', 'F28'),
+        ('sum_equipment', 'Equipment /€', 'D29', 'F29'),
+        ('sum_other', 'Other goods, works and services /€', 'D30', 'F30'),
+        ('sum_financial_support',
+            'Financial support to third parties /€', 'D31', 'F31'),
+        ('sum_internal_goods',
+            'Internally invoiced goods & services /€', 'D32', 'F32'),
+        ('sum_income_generated',
+            'Income generated by the action', 'D33', 'F33'),
+        ('sum_financial_contributions',
+            'Financial contributions', 'D34', 'F34'),
+        ('sum_own_resources', 'Own resources', 'D35', 'F35')
     ]
 
-    for field, label in financial_fields:
-        ws[f'B{current_row}'] = label
-        ws[f'D{current_row}'] = partner_info.get(field, '')
-        if field.startswith('sum_'):
-            try:
-                value = float(partner_info.get(field, '0'))
-                ws[f'D{current_row}'].number_format = '#,##0.00'
-            except ValueError:
-                pass
-        current_row += 1
+    for field_key, label, label_cell, value_cell in financial_fields:
+        ws[label_cell] = label
+        value = partner_info.get(field_key, '')
+        if value and isinstance(value, (int, float)):
+            ws[value_cell] = float(value)
+            ws[value_cell].number_format = '#,##0.00'
+        else:
+            ws[value_cell] = value
 
-        # Add explanation if it exists
-        explanation_key = f'explanation_{field[4:]}' if field.startswith('sum_') else None
-        if explanation_key and explanation_key in partner_info:
-            ws[f'B{current_row}'] = f'Explanation for {label}:'
-            ws[f'D{current_row}'] = partner_info.get(explanation_key, '')
-            current_row += 1
+    # Write explanation fields
+    explanation_fields = [
+        ('explanation_financial_support',
+            'Financial Support Explanation:', 'B36', 'G36'),
+        ('explanation_internal_goods',
+            'Internal Goods Explanation:', 'B37', 'G37'),
+        ('explanation_income_generated',
+            'Income Generated Explanation:', 'B38', 'G38'),
+        ('explanation_financial_contributions',
+            'Financial Contributions Explanation:', 'B39', 'G39'),
+        ('explanation_own_resources',
+            'Own Resources Explanation:', 'B40', 'G40')
+    ]
+
+    for field_key, label, label_cell, value_cell in explanation_fields:
+        ws[label_cell] = label
+        ws[value_cell] = partner_info.get(field_key, '')
 
     # Update version history
     update_version_history(workbook, f"Added partner: {sheet_name}")
     return True
+
 
 def update_version_history(workbook, summary):
     """Update the version history sheet with a new entry"""

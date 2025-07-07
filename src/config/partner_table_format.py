@@ -1,86 +1,87 @@
-PARTNER_TABLE_FORMAT = [   # Partner information section
+PARTNER_TABLE_FORMAT = [   
+    # Partner information section
     {
         "label": "Partner Number Label",
         "range": "B2:C2",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner Number",
         "range": "D2:E2",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Partner Acronym Label",
         "range": "B3:C3",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner Acronym",
         "range": "D3:E3",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Partner ID Code Label",
         "range": "B4:C4",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Partner ID Code",
         "range": "D4:E4",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Name of Beneficiary Label",
         "range": "B5:C5",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Name of Beneficiary",
         "range": "D5:E5",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Country Label",
         "range": "B6:C6",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Country",
         "range": "D6:E6",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
         "label": "Role Label",
         "range": "B7:C7",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
     {
         "label": "Role",
         "range": "D7:E7",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "left"
     },
     {
@@ -94,14 +95,14 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "label": "Partner Acronym",
         "range": "B3:C3",
         "merge": True,
-        "fillColor": "d9d9d9",
+    # "fillColor": "d9d9d9",
         "alignment": "right"
     },
-   {
+    {
         "label": "",
         "range": "D3:E3",
         "merge": True,
-        "fillColor": "c5e0b4",
+    # "fillColor": "c5e0b4",
         "alignment": "right"
     },
     {
@@ -111,7 +112,7 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "fillColor": "d9d9d9",
         "alignment": "right"
     },
-   {
+    {
         "label": "",
         "range": "D4:E4",
         "merge": True,
@@ -125,7 +126,7 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "fillColor": "d9d9d9",
         "alignment": "right"
     },
-   {
+    {
         "label": "",
         "range": "D5:E5",
         "merge": True,
@@ -139,7 +140,7 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "fillColor": "d9d9d9",
         "alignment": "right"
     },
-        {
+    {
         "label": "",
         "range": "D6:E6",
         "merge": True,
@@ -164,206 +165,206 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
     {
         "label": "TABLE 1",
         "range": "B10",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "BUDGET",
         "range": "C10:X10",
         "merge": True,
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "0",
         "range": "B11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "1",
         "range": "C11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "2",
         "range": "D11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "3",
         "range": "E11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "4",
         "range": "F11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "5 (A)",
         "range": "G11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "6 (B)",
         "range": "H11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "7 (C1)",
         "range": "I11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "8 (C2)",
         "range": "J11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "9 (C3)",
         "range": "K11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "10 (D1)",
         "range": "L11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "11 (D2)",
         "range": "M11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "12 (E)",
         "range": "N11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "13",
         "range": "O11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "14",
         "range": "P11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "15",
         "range": "Q11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "16",
         "range": "R11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "17",
         "range": "S11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "18",
         "range": "T11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "19",
         "range": "U11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "20",
         "range": "W11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "21",
         "range": "X11",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "No.",
         "range": "B12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "PIC (Partner identification code)",
         "range": "C12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Name of beneficiary",
         "range": "D12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Country",
         "range": "E12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Role",
         "range": "F12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Personnel costs /€",
         "range": "G12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Subcontractingcosts /€",
         "range": "H12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Travel and substistence /€",
         "range": "I12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Equipment /€",
         "range": "J12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Purchase costs - Other goods, works and services /€",
         "range": "K12",
-        "fillColor": "2e75b6",
+    # "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
@@ -373,7 +374,8 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "alignment": "center"
     },
     {
-        "label": "Internally invoiced goods and services /€(Unit costs- usual accounting practices)",
+        "label": "Internally invoiced goods and services /€"
+               "(Unit costs- usual accounting practices)",
         "range": "M12",
         "fillColor": "2e75b6",
         "alignment": "center"
@@ -548,43 +550,50 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "r13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "s13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "t13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "u13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "v13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "W13",
         "formula": "",
         "fillColor": "d9d9d9",
         "alignment": "center"
-    },{
+    },
+    {
         "label": "",
         "range": "X13",
         "formula": "",
@@ -714,19 +723,19 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
     {
         "label": "TABLE 2",
         "range": "B16",
-		"fillColor": "2e75b6",
+    	"fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Number of Person-Months (PMs) across Work-Packages (WP)s",
         "range": "C16:N16",
         "merge": True,
-		"fillColor": "2e75b6",
+        "fillColor": "2e75b6",
         "alignment": "center"
     },
     {
         "label": "Sum / WPs",
-		"fillColor": "9dc3e6",
+        "fillColor": "9dc3e6",
         "range": "B17",
 		"alignment": "center"
     },
@@ -1187,7 +1196,7 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "fillColor": "d9d9d9",
         "alignment": "center"
     },
-{
+    {
         "label": "Financial support to third parties /€",
         "range": "D35:E35",
         "merge": True,
@@ -1205,7 +1214,7 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "decimalPlaces": 2
         }
     },
-        {
+    {
         "label": "",
         "range": "G35:H35",
         "merge": True,
@@ -1231,28 +1240,28 @@ PARTNER_TABLE_FORMAT = [   # Partner information section
         "decimalPlaces": 2
         }
     },
-        {
+    {
         "label": "",
         "range": "G36:H36",
         "merge": True,
         "alignment": "right",
         "fillColor": "c5e0b4"
     },
-        {
-            "label": "Total",
-            "range": "C37",
-            "alignment": "center",
-            "fillColor": "2e75b6"
-        },
-        {
+    {
+        "label": "Total",
+        "range": "C37",
+        "alignment": "center",
+        "fillColor": "2e75b6"
+    },
+    {
         "label": "",
         "range": "D37:F37",
         "formula": "=SUM(F35:F36)",
         "alignment": "right",
         "fillColor": "2e75b6"
     },
-        # TABLE X
-        {
+    # TABLE X
+    {
             "label": "Table X",
             "range": "B40",
             "fillColor": "2e75b6",
