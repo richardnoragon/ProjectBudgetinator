@@ -1,5 +1,30 @@
+"""
+Workpackage management functions for working with Excel workbooks.
+"""
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+
+def add_workpackage_to_workbook(workbook, wp_info):
+    """Add a workpackage to the PM Summary sheet in an Excel workbook."""
+    try:
+        ws = workbook["PM Summary"]
+        row = wp_info['row']
+        
+        # Write the values
+        ws[f'B{row}'] = wp_info['title']
+        ws[f'D{row}'] = wp_info['lead_partner']
+        ws[f'F{row}'] = wp_info['start_month']
+        ws[f'G{row}'] = wp_info['end_month']
+        
+        return True
+    except Exception as e:
+        messagebox.showerror(
+            "Error",
+            f"Failed to save workpackage:\n{str(e)}"
+        )
+        return False
+
 
 class AddWorkpackageDialog:
     def __init__(self, parent, workbook):
@@ -154,14 +179,14 @@ class AddWorkpackageDialog:
                 'end_month': self.end_month_var.get().strip()
             }
             
-            # Import and call work_package_table_format
+            # Import and call workpackage_table_format
             try:
-                from ..config import work_package_table_format
-                work_package_table_format.format_table(self.workbook)
+                from ..config import workpackage_table_format
+                workpackage_table_format.format_table(self.workbook)
             except ImportError:
                 # In case the relative import fails, try absolute import
-                from config import work_package_table_format
-                work_package_table_format.format_table(self.workbook)
+                from config import workpackage_table_format
+                workpackage_table_format.format_table(self.workbook)
             except Exception as e:
                 # Log the error but don't prevent saving
                 print(f"Warning: Could not apply table formatting: {str(e)}")
@@ -173,3 +198,7 @@ class AddWorkpackageDialog:
                 "Error",
                 f"Failed to save workpackage:\n{str(e)}"
             )
+
+
+# For backward compatibility
+WorkpackageDialog = AddWorkpackageDialog

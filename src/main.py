@@ -66,6 +66,8 @@ class ProjectBudgetinator:
         self.current_workbook = None
         # Set up the menu bar
         self._setup_file_menu()
+        # Show diagnostics window at startup
+        self.show_diagnostics()
     def _setup_file_menu(self):
         menubar = tk.Menu(self.root)
         # File menu
@@ -150,7 +152,7 @@ class ProjectBudgetinator:
                 return
 
         from tkinter import simpledialog
-        from handlers.partner_handler import (
+        from handlers.add_partner_handler import (
             PartnerDialog,
             add_partner_to_workbook
         )

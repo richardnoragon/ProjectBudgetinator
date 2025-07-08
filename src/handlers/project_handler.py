@@ -5,8 +5,8 @@ import tkinter as tk
 from tkinter import filedialog
 from gui.dialogs import ProjectSettingsDialog
 from handlers.file_handler import new_file, open_file, save_file
-from handlers.partner_handler import add_partner_to_workbook, PartnerDialog
-from handlers.workpackage_handler import (
+from handlers.add_partner_handler import add_partner_to_workbook, PartnerDialog
+from handlers.add_workpackage_handler import (
     add_workpackage_to_workbook,
     WorkpackageDialog
 )

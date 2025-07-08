@@ -210,14 +210,14 @@ class EditWorkpackageDialog:
                 'end_month': self.end_month_var.get().strip()
             }
             
-            # Import and call work_package_table_format
+            # Import and call workpackage_table_format
             try:
-                from ..config import work_package_table_format
-                work_package_table_format.format_table(self.workbook)
+                from ..config import workpackage_table_format
+                workpackage_table_format.format_table(self.workbook)
             except ImportError:
                 # In case the relative import fails, try absolute import
-                from config import work_package_table_format
-                work_package_table_format.format_table(self.workbook)
+                from config import workpackage_table_format
+                workpackage_table_format.format_table(self.workbook)
             except Exception as e:
                 # Log the error but don't prevent saving
                 print(f"Warning: Could not apply table formatting: {str(e)}")
