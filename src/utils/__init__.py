@@ -22,6 +22,8 @@ from utils.excel_compare import (
     save_comparison_snapshot,
     load_comparison_snapshot
 )
+from .excel_manager import ExcelManager
+from .cache_manager import CacheManager, cache_manager, cached_with_invalidation
 
 __all__ = [
     'get_app_directory',
@@ -38,5 +40,9 @@ __all__ = [
     'compare_workbooks',
     'format_comparison_results',
     'save_comparison_snapshot',
-    'load_comparison_snapshot'
+    'load_comparison_snapshot',
+    'ExcelManager',
+    'CacheManager',
+    'cache_manager',
+    'cached_with_invalidation'
 ]

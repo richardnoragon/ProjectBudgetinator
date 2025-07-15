@@ -35,6 +35,12 @@ def create_menu(root, callbacks):
     )
     file_menu.add_separator()
     file_menu.add_command(
+        label="Batch Operations...",
+        command=callbacks.get('batch_operations'),
+        accelerator="Ctrl+B"
+    )
+    file_menu.add_separator()
+    file_menu.add_command(
         label="Exit",
         command=callbacks.get('exit_app'),
         accelerator="Alt+F4"
@@ -69,3 +75,4 @@ def setup_keyboard_shortcuts(root, callbacks):
     root.bind('<Control-o>', lambda e: callbacks.get('open_file')())
     root.bind('<Control-s>', lambda e: callbacks.get('save_file')())
     root.bind('<Control-S>', lambda e: callbacks.get('save_as')())
+    root.bind('<Control-b>', lambda e: callbacks.get('batch_operations')())

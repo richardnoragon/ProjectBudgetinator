@@ -18,10 +18,15 @@ import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
 from devtools import not_implemented_yet, DebugConsole, dev_log
 from version import full_version_string  # Only import what we use
-from logger import setup_logging
-
+from logger import setup_logging, get_structured_logger, LogContext
+from utils.error_handler import setup_error_handling, handle_exceptions
+from utils.performance_monitor import get_performance_monitor, monitor_performance
+from utils.security_validator import SecurityValidator, InputSanitizer
+from gui.performance_monitor_gui import show_performance_monitor, PerformanceIndicator
 from openpyxl.styles import PatternFill  # Used in _add_partner_worksheet
 from validation import FormValidator
+from gui.batch_operations import show_batch_operations_dialog
+import openpyxl.utils.cell
 
 # Application config defaults
 DEFAULT_USER_CONFIG = {
@@ -52,11 +57,6 @@ ENTER_FILE_EXT = "Enter file extension:"
 # Column headers
 VERSION_HISTORY_COLUMNS = ["Timestamp", "Version Info", "Summary"]
 
-
-
-
-import openpyxl.utils.cell
-
 class ProjectBudgetinator:
     def __init__(self):
         self.root = tk.Tk()
@@ -64,8 +64,26 @@ class ProjectBudgetinator:
         self.prefs_manager = None
         self.current_config = DEFAULT_USER_CONFIG.copy()
         self.current_workbook = None
+        
+        # Initialize structured logging system
+        setup_logging()
+        self.logger = get_structured_logger("ProjectBudgetinator.main")
+        
+        # Initialize error handling system
+        setup_error_handling(self.root)
+        
+        # Initialize performance monitoring
+        self.performance_monitor = get_performance_monitor()
+        
+        # Log application startup
+        self.logger.info("ProjectBudgetinator application starting", 
+                        version=full_version_string(),
+                        developer_mode=self.developer_mode)
+        
         # Set up the menu bar
         self._setup_file_menu()
+        # Initialize performance indicator
+        self._setup_performance_indicator()
         # Show diagnostics window at startup
         self.show_diagnostics()
     def _setup_file_menu(self):
@@ -78,6 +96,10 @@ class ProjectBudgetinator:
         file_menu.add_command(label="Create from template", command=self.create_from_template)
         file_menu.add_separator()
         file_menu.add_command(label="Restore", command=self.restore_file)
+        file_menu.add_separator()
+        file_menu.add_command(label="Batch Operations...",
+                              command=self.show_batch_operations,
+                              accelerator="Ctrl+B")
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.exit_program)
         menubar.add_cascade(label="File", menu=file_menu)
@@ -95,9 +117,15 @@ class ProjectBudgetinator:
         help_menu = tk.Menu(menubar, tearoff=0)
         help_menu.add_command(label="Help", command=self.show_help)
         help_menu.add_command(label="Diagnostics", command=self.show_diagnostics)
+        help_menu.add_separator()
+        help_menu.add_command(label="Performance Monitor", command=self.show_performance_monitor)
         menubar.add_cascade(label="Help", menu=help_menu)
 
         self.root.config(menu=menubar)
+        
+        # Set up keyboard shortcuts
+        self.root.bind_all("<Control-b>",
+                           lambda e: self.show_batch_operations())
 
 
     def _create_modify_submenu(self, parent):
@@ -125,31 +153,56 @@ class ProjectBudgetinator:
     # Partner and workpackage operations
     def add_partner(self):
         """Open a dialog to add a new partner to the project."""
-        # Check if we have an open workbook
-        if self.current_workbook is None:
-            response = messagebox.askyesno(
-                "No Workbook Open",
-                "No workbook is currently open. Would you like to open one now?"
-            )
-            if response:
-                file_path = filedialog.askopenfilename(
-                    title="Open Excel Workbook",
-                    filetypes=EXCEL_FILETYPES
+        with LogContext("add_partner", user_id="current_user"):
+            self.logger.info("Starting add partner operation")
+            
+            # Check if we have an open workbook
+            if self.current_workbook is None:
+                self.logger.warning("No workbook open, prompting user to open one")
+                response = messagebox.askyesno(
+                    "No Workbook Open",
+                    "No workbook is currently open. Would you like to open one now?"
                 )
-                if file_path:
-                    try:
-                        from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(file_path)
-                    except Exception as e:
-                        messagebox.showerror(
-                            "Error",
-                            f"Could not open workbook:\n{str(e)}"
-                        )
+                if response:
+                    file_path = filedialog.askopenfilename(
+                        title="Open Excel Workbook",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if file_path:
+                        try:
+                            # Validate file path and content
+                            is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                            if not is_valid:
+                                messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                                self.logger.warning("Security validation failed for file",
+                                                  file_path=file_path, error=error_msg)
+                                return
+                            
+                            # Sanitize file path
+                            safe_path = SecurityValidator.validate_file_path(file_path)
+                            
+                            from openpyxl import load_workbook
+                            self.current_workbook = load_workbook(safe_path)
+                            self.logger.info("Workbook loaded successfully",
+                                           file_path=safe_path)
+                        except ValueError as e:
+                            messagebox.showerror("Security Error", str(e))
+                            self.logger.warning("Security validation error", error=str(e))
+                            return
+                        except Exception as e:
+                            self.logger.error("Failed to load workbook",
+                                            file_path=file_path, error=str(e))
+                            messagebox.showerror(
+                                "Error",
+                                f"Could not open workbook:\n{str(e)}"
+                            )
+                            return
+                    else:
+                        self.logger.info("User cancelled workbook selection")
                         return
                 else:
+                    self.logger.info("User declined to open workbook")
                     return
-            else:
-                return
 
         from tkinter import simpledialog
         from handlers.add_partner_handler import (
@@ -698,6 +751,22 @@ class ProjectBudgetinator:
         if not src_path:
             return
 
+        try:
+            # Validate source file
+            is_valid, error_msg = SecurityValidator.validate_excel_file(src_path)
+            if not is_valid:
+                messagebox.showerror("Security Error", f"Cannot clone file: {error_msg}")
+                self.logger.warning("Security validation failed for source file",
+                                  file_path=src_path, error=error_msg)
+                return
+            
+            # Sanitize source path
+            safe_src_path = SecurityValidator.validate_file_path(src_path)
+        except ValueError as e:
+            messagebox.showerror("Security Error", str(e))
+            self.logger.warning("Security validation error for source file", error=str(e))
+            return
+
         # Step 2: Select destination directory
         dest_dir = filedialog.askdirectory(
             title="Select destination folder"
@@ -705,13 +774,27 @@ class ProjectBudgetinator:
         if not dest_dir:
             return
 
+        try:
+            # Validate destination directory
+            safe_dest_dir = SecurityValidator.validate_directory_path(dest_dir)
+        except ValueError as e:
+            messagebox.showerror("Security Error", f"Invalid destination directory: {str(e)}")
+            self.logger.warning("Security validation error for destination directory", error=str(e))
+            return
+
         # Step 3: Get file details
-        base_name = os.path.splitext(os.path.basename(src_path))[0]
-        ext = os.path.splitext(src_path)[1]
+        base_name = os.path.splitext(os.path.basename(safe_src_path))[0]
+        ext = os.path.splitext(safe_src_path)[1]
 
         new_name = self._prompt_for_detail(
             CLONE_FILE_TITLE, "Enter new file name:", base_name)
         if not new_name:
+            return
+
+        # Sanitize new filename
+        new_name = SecurityValidator.sanitize_filename(new_name)
+        if not new_name:
+            messagebox.showerror("Invalid Input", "Invalid file name provided.")
             return
 
         new_ext = self._prompt_for_detail(
@@ -719,24 +802,39 @@ class ProjectBudgetinator:
         if not new_ext:
             return
 
+        # Sanitize extension
+        new_ext = InputSanitizer.sanitize_string(new_ext, max_length=10)
+        if not new_ext.startswith('.'):
+            new_ext = '.' + new_ext
+
         # Optional project name
         project_name = self._prompt_for_detail(
             CLONE_FILE_TITLE,
             "Enter project name (optional):",
             ""
         )
+        
+        # Sanitize project name if provided
+        if project_name:
+            project_name = InputSanitizer.sanitize_string(project_name, max_length=100)
 
         # Step 4: Clone the file
-        dest_path = os.path.join(dest_dir, new_name + new_ext)
+        dest_path = os.path.join(safe_dest_dir, new_name + new_ext)
         try:
+            # Validate final destination path
+            safe_dest_path = SecurityValidator.validate_file_path(dest_path)
+            
             import shutil
-            shutil.copy2(src_path, dest_path)
+            shutil.copy2(safe_src_path, safe_dest_path)
             messagebox.showinfo(
                 "Clone Complete",
-                f"File cloned to:\n{dest_path}"
+                f"File cloned to:\n{safe_dest_path}"
             )
             if project_name:
                 dev_log(f"Project name for clone: {project_name}")
+        except ValueError as e:
+            messagebox.showerror("Security Error", str(e))
+            self.logger.warning("Security validation error for destination path", error=str(e))
         except Exception as e:
             messagebox.showerror(
                 "Clone Failed",
@@ -1281,6 +1379,41 @@ class ProjectBudgetinator:
         bg_color = "gray20" if theme == "dark" else "SystemButtonFace"
         self.root.configure(bg=bg_color)
 
+    def _setup_performance_indicator(self):
+        """Set up the performance indicator in the status bar."""
+        try:
+            # Create status bar frame
+            status_frame = ttk.Frame(self.root)
+            status_frame.pack(side=tk.BOTTOM, fill=tk.X)
+            
+            # Add performance indicator
+            self.performance_indicator = PerformanceIndicator(status_frame)
+            self.performance_indicator.get_widget().pack(side=tk.RIGHT, padx=10, pady=2)
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to setup performance indicator: {e}")
+
+    def show_performance_monitor(self):
+        """Show the performance monitoring dialog."""
+        try:
+            show_performance_monitor(self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open performance monitor:\n{e}")
+            self.logger.error(f"Performance monitor error: {e}")
+
+    @monitor_performance(include_memory=True, log_level='DEBUG')
+    def load_workbook(self, file_path: str):
+        """Load Excel workbook with performance monitoring."""
+        try:
+            # Use the existing workbook loading logic with performance monitoring
+            # This is a placeholder - integrate with your actual workbook loading
+            self.logger.info(f"Loading workbook: {file_path}")
+            # Your existing workbook loading code here
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to load workbook: {e}")
+            return False
+
     # check_first_run is now replaced by check_first_run_and_show_diagnostics
 
     def create_directory_structure(self):
@@ -1316,6 +1449,18 @@ class ProjectBudgetinator:
             filepath = os.path.join(config_dir, filename)
             with open(filepath, "w") as f:
                 json.dump(content, f, indent=4)
+
+    def show_batch_operations(self):
+        """Show the batch operations dialog."""
+        try:
+            self.logger.info("Opening batch operations dialog")
+            show_batch_operations_dialog(parent=self.root)
+            self.logger.info("Batch operations dialog closed")
+        except Exception as e:
+            self.logger.error("Failed to open batch operations dialog",
+                              error=str(e))
+            messagebox.showerror("Error",
+                                 "Failed to open batch operations dialog.")
 
     def exit_program(self):
         """Prompt the user to confirm exit and quit the application."""

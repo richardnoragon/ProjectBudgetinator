@@ -10,6 +10,88 @@
 			],
 			"group": "build",
 			"isBackground": false
+		},
+		{
+			"label": "Static Analysis - All Tools",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"run_static_analysis.py"
+			],
+			"group": "test",
+			"isBackground": false,
+			"problemMatcher": ["$python"],
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "new",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Static Analysis - MyPy Type Check",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "mypy", "src/", "--config-file", "mypy.ini"
+			],
+			"group": "test",
+			"isBackground": false,
+			"problemMatcher": ["$python"]
+		},
+		{
+			"label": "Static Analysis - Pylint Code Quality",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "pylint", "src/", "--rcfile", ".pylintrc"
+			],
+			"group": "test",
+			"isBackground": false,
+			"problemMatcher": ["$python"]
+		},
+		{
+			"label": "Static Analysis - Flake8 Style Check",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "flake8", "src/", "--config", ".flake8"
+			],
+			"group": "test",
+			"isBackground": false,
+			"problemMatcher": ["$python"]
+		},
+		{
+			"label": "Static Analysis - Bandit Security Scan",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "bandit", "-r", "src/", "-c", ".bandit", "-f", "txt"
+			],
+			"group": "test",
+			"isBackground": false
+		},
+		{
+			"label": "Format Code - Black",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "black", "src/"
+			],
+			"group": "test",
+			"isBackground": false
+		},
+		{
+			"label": "Format Code - isort Imports",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"-m", "isort", "src/"
+			],
+			"group": "test",
+			"isBackground": false
 		}
 	]
 }

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://projectbudgetinator.com/schemas/user-config.json",
+  "title": "ProjectBudgetinator User Configuration",
+  "description": "Configuration schema for ProjectBudgetinator user preferences",
+  "type": "object",
+  "required": [
+    "theme",
+    "welcome_screen",
+    "startup_diagnostic",
+    "config_version"
+  ],
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark"],
+      "default": "light",
+      "description": "Application theme"
+    },
+    "welcome_screen": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show welcome screen on startup"
+    },
+    "startup_diagnostic": {
+      "type": "string",
+      "enum": ["silent", "minimal", "verbose", "debug"],
+      "default": "verbose",
+      "description": "Level of startup diagnostics"
+    },
+    "default_file_location": {
+      "type": "string",
+      "format": "uri-reference",
+      "description": "Default directory for file operations"
+    },
+    "remember_last_location": {
+      "type": "boolean",
+      "default": false,
+      "description": "Remember last used directory"
+    },
+    "save_location": {
+      "type": "string",
+      "format": "uri-reference",
+      "description": "Default directory for saving files"
+    },
+    "auto_backup": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable automatic backups"
+    },
+    "backup_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 5,
+      "description": "Number of backups to keep"
+    },
+    "max_recent_files": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 10,
+      "description": "Number of recent files to remember"
+    },
+    "enable_caching": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable file caching"
+    },
+    "cache_size_mb": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 1000,
+      "default": 100,
+      "description": "Cache size in MB"
+    },
+    "config_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "default": "2.0",
+      "description": "Configuration schema version"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    }
+  },
+  "additionalProperties": false
+}

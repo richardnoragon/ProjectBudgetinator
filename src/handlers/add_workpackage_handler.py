@@ -3,27 +3,27 @@ Workpackage management functions for working with Excel workbooks.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
+from utils.error_handler import ExceptionHandler
+
+# Create exception handler instance
+exception_handler = ExceptionHandler()
 
 
+@exception_handler.handle_exceptions(
+    show_dialog=True, log_error=True, return_value=False
+)
 def add_workpackage_to_workbook(workbook, wp_info):
     """Add a workpackage to the PM Summary sheet in an Excel workbook."""
-    try:
-        ws = workbook["PM Summary"]
-        row = wp_info['row']
-        
-        # Write the values
-        ws[f'B{row}'] = wp_info['title']
-        ws[f'D{row}'] = wp_info['lead_partner']
-        ws[f'F{row}'] = wp_info['start_month']
-        ws[f'G{row}'] = wp_info['end_month']
-        
-        return True
-    except Exception as e:
-        messagebox.showerror(
-            "Error",
-            f"Failed to save workpackage:\n{str(e)}"
-        )
-        return False
+    ws = workbook["PM Summary"]
+    row = wp_info['row']
+    
+    # Write the values
+    ws[f'B{row}'] = wp_info['title']
+    ws[f'D{row}'] = wp_info['lead_partner']
+    ws[f'F{row}'] = wp_info['start_month']
+    ws[f'G{row}'] = wp_info['end_month']
+    
+    return True
 
 
 class AddWorkpackageDialog:
@@ -148,6 +148,9 @@ class AddWorkpackageDialog:
         
         self.dialog.geometry(f"+{x}+{y}")
         
+    @exception_handler.handle_exceptions(
+        show_dialog=True, log_error=True, return_value=None
+    )
     def _on_commit(self):
         """Handle the commit button click."""
         # Validate inputs (basic validation)
@@ -163,41 +166,37 @@ class AddWorkpackageDialog:
             )
             return
             
+        # Write values to worksheet
+        self.ws[f'B{self.next_row}'] = self.title_var.get().strip()
+        self.ws[f'D{self.next_row}'] = self.lead_partner_var.get().strip()
+        self.ws[f'F{self.next_row}'] = self.start_month_var.get().strip()
+        self.ws[f'G{self.next_row}'] = self.end_month_var.get().strip()
+        
+        # Set the result to indicate success
+        self.result = {
+            'row': self.next_row,
+            'title': self.title_var.get().strip(),
+            'lead_partner': self.lead_partner_var.get().strip(),
+            'start_month': self.start_month_var.get().strip(),
+            'end_month': self.end_month_var.get().strip()
+        }
+        
+        # Import and call workpackage_table_format
         try:
-            # Write values to worksheet
-            self.ws[f'B{self.next_row}'] = self.title_var.get().strip()
-            self.ws[f'D{self.next_row}'] = self.lead_partner_var.get().strip()
-            self.ws[f'F{self.next_row}'] = self.start_month_var.get().strip()
-            self.ws[f'G{self.next_row}'] = self.end_month_var.get().strip()
-            
-            # Set the result to indicate success
-            self.result = {
-                'row': self.next_row,
-                'title': self.title_var.get().strip(),
-                'lead_partner': self.lead_partner_var.get().strip(),
-                'start_month': self.start_month_var.get().strip(),
-                'end_month': self.end_month_var.get().strip()
-            }
-            
-            # Import and call workpackage_table_format
+            from ..config import workpackage_table_format
+            workpackage_table_format.format_table(self.workbook)
+        except ImportError:
+            # In case the relative import fails, try absolute import
             try:
-                from ..config import workpackage_table_format
-                workpackage_table_format.format_table(self.workbook)
-            except ImportError:
-                # In case the relative import fails, try absolute import
                 from config import workpackage_table_format
                 workpackage_table_format.format_table(self.workbook)
-            except Exception as e:
-                # Log the error but don't prevent saving
-                print(f"Warning: Could not apply table formatting: {str(e)}")
-            
-            self.dialog.destroy()
-            
+            except ImportError:
+                print("Warning: Could not import workpackage_table_format")
         except Exception as e:
-            messagebox.showerror(
-                "Error",
-                f"Failed to save workpackage:\n{str(e)}"
-            )
+            # Log the error but don't prevent saving
+            print(f"Warning: Could not apply table formatting: {str(e)}")
+        
+        self.dialog.destroy()
 
 
 # For backward compatibility

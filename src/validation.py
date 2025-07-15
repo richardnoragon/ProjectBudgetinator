@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, Optional, Union
 from tkinter import messagebox
+from utils.security_validator import InputSanitizer
+
 
 def validate_wp_value(value: str) -> tuple[bool, Optional[float], Optional[str]]:
     """
@@ -13,16 +15,22 @@ def validate_wp_value(value: str) -> tuple[bool, Optional[float], Optional[str]]
     Returns:
         Tuple of (is_valid, converted_value, error_message)
     """
-    if not value.strip():
+    # Sanitize input
+    sanitized = InputSanitizer.sanitize_string(value)
+    
+    if not sanitized:
         return True, 0.0, None
         
-    try:
-        float_val = float(value)
-        if float_val < 0:
-            return False, None, "WP value cannot be negative"
-        return True, float_val, None
-    except ValueError:
+    # Validate as numeric
+    numeric_value = InputSanitizer.sanitize_numeric_input(sanitized)
+    if numeric_value is None:
         return False, None, "WP value must be a valid number"
+    
+    if numeric_value < 0:
+        return False, None, "WP value cannot be negative"
+    
+    return True, numeric_value, None
+
 
 def validate_required_text(
     value: str,
@@ -42,17 +50,17 @@ def validate_required_text(
     Returns:
         Tuple of (is_valid, error_message)
     """
-    value = value.strip()
-    if not value:
+    # Sanitize input
+    sanitized = InputSanitizer.sanitize_string(value, max_length=max_length)
+    
+    if not sanitized:
         return False, f"{field_name} is required"
     
-    if len(value) < min_length:
+    if len(sanitized) < min_length:
         return False, f"{field_name} must be at least {min_length} characters"
     
-    if len(value) > max_length:
-        return False, f"{field_name} cannot exceed {max_length} characters"
-    
-    return True, None
+    return True, sanitized
+
 
 class FormValidator:
     """Validator for partner detail forms."""
@@ -78,19 +86,19 @@ class FormValidator:
         }
         
         for field, label in required_fields.items():
-            is_valid, error = validate_required_text(
-                data.get(field, ""),
+            is_valid, result = validate_required_text(
+                str(data.get(field, "")),
                 label
             )
-            if not is_valid:
-                errors[field] = error
+            if not is_valid and result is not None:
+                errors[field] = result
         
         # Validate WP fields
         for i in range(1, 16):
             field = f"wp{i}"
-            value = data.get(field, "")
+            value = str(data.get(field, ""))
             is_valid, _, error = validate_wp_value(value)
-            if not is_valid:
+            if not is_valid and error is not None:
                 errors[field] = error
         
         return len(errors) == 0, errors

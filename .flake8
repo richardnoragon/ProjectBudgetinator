@@ -1,0 +1,80 @@
+[flake8]
+max-line-length = 100
+max-complexity = 10
+
+# Error codes to ignore
+extend-ignore = 
+    E203,
+    E501,
+    W503,
+    E402,
+    F401
+
+# Exclude directories and files
+exclude = 
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.pyc,
+    *.pyo,
+    *.pyd,
+    .Python,
+    env,
+    venv,
+    .venv,
+    pip-log.txt,
+    pip-delete-this-directory.txt,
+    .tox,
+    .coverage,
+    .coverage.*,
+    .cache,
+    nosetests.xml,
+    coverage.xml,
+    *.cover,
+    *.log,
+    .idea,
+    .vscode,
+    backups,
+    logs,
+    workbooks,
+    templates
+
+# Per-file ignores
+per-file-ignores = 
+    # __init__.py files can have unused imports
+    __init__.py:F401,E402
+    # Test files can use assert statements and have long lines
+    tests/*:S101,E501
+    # Configuration files might have long lines
+    */config/*.py:E501
+    # Examples might have different standards
+    examples/*.py:E501,F401
+
+# Select specific error codes to check
+select = E,W,F,C,N
+
+# Show source code for each error
+show-source = True
+
+# Show pep8 source for each error
+show-pep8 = False
+
+# Count errors and warnings
+count = True
+
+# Print total number of errors and warnings to stderr
+statistics = True
+
+# Format for error output
+format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s
+
+# Enable specific warnings
+enable-extensions = 
+    G,  # flake8-logging-format
+    C4, # flake8-comprehensions
+
+# Disable specific warnings
+ignore-names = 
+    setUp,
+    tearDown

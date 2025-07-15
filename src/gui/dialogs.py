@@ -4,6 +4,12 @@ Dialog boxes and forms for user input.
 import tkinter as tk
 from tkinter import ttk
 
+# Import progress dialog functionality
+from .progress_dialog import (
+    ProgressDialog, ProgressContext, ThreadedProgressOperation,
+    show_progress_for_operation, create_progress_dialog
+)
+
 
 class ProjectSettingsDialog(tk.Toplevel):
     """Dialog for entering project settings."""
