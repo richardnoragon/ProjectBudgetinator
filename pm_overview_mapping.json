@@ -1,0 +1,103 @@
+{
+  "_comment": "DO NOT MODIFY. This file maps the PM Overview worksheet structure for automated processing.",
+  "worksheet": "PM Overview",
+  "header_row": 3,
+  "columns": {
+    "Partner": {
+      "column": "A",
+      "format": "Text",
+      "bold": true
+    },
+    "WP1": {
+      "column": "B",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP2": {
+      "column": "C",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP3": {
+      "column": "D",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP4": {
+      "column": "E",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP5": {
+      "column": "F",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP6": {
+      "column": "G",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP7": {
+      "column": "H",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP8": {
+      "column": "I",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP9": {
+      "column": "J",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP10": {
+      "column": "K",
+      "format": "0.00",
+      "formula": null
+    },
+    "WP11": {
+      "column": "L",
+      "format": "0.00",
+      "formula": null
+    },
+    "SUM": {
+      "column": "M",
+      "format": "0.00",
+      "formula": "M{row} = SUM(B{row}:L{row})"
+    },
+    "PM RATE": {
+      "column": "N",
+      "format": "0.00",
+      "formula": null
+    },
+    "Suggested CUT": {
+      "column": "O",
+      "format": "0.00",
+      "formula": "O{row} = M{row} * 0.1"
+    },
+    "Budget Cut": {
+      "column": "P",
+      "format": "#,##0",
+      "formula": null
+    },
+    "Change": {
+      "column": "Q",
+      "format": "Text",
+      "formula": null
+    },
+    "Partners / Total PMs": {
+      "column": "R",
+      "format": "Text",
+      "formula": null
+    }
+  },
+  "style": {
+    "font": "Calibri",
+    "bold_headers": true,
+    "fill_header": "Deep Blue",
+    "fill_data": "White"
+  }
+}

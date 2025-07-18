@@ -13,6 +13,10 @@ directory/config creation, and version history tracking.
 import json
 import os
 import datetime
+import shutil
+import tempfile
+import subprocess
+import pandas as pd
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
@@ -140,6 +144,9 @@ class ProjectBudgetinator:
         for label, command in partner_commands:
             modify_menu.add_command(label=label, command=command)
         modify_menu.add_separator()
+        # P1 Coordinator management
+        modify_menu.add_command(label="Manage P1", command=self.manage_p1)
+        modify_menu.add_separator()
         # Workpackage operations
         workpackage_commands = [
             ("Add Workpackage", self.add_workpackage),
@@ -204,38 +211,26 @@ class ProjectBudgetinator:
                     self.logger.info("User declined to open workbook")
                     return
 
-        from tkinter import simpledialog
         from handlers.add_partner_handler import (
+            PartnerInputDialog,
             PartnerDialog,
-            add_partner_to_workbook
+            add_partner_to_workbook,
+            get_existing_partners
         )
         
-        # Get partner number
-        partner_number = simpledialog.askstring(
-            "Add Partner",
-            "Enter Partner Number:",
-            parent=self.root
-        )
-        if not partner_number:
+        # Get existing partners from workbook
+        existing_partners = get_existing_partners(self.current_workbook)
+        
+        # Show the new partner input dialog with validation
+        input_dialog = PartnerInputDialog(self.root, existing_partners)
+        if not input_dialog.result:
             return
-            
-        if partner_number == "1":
-            messagebox.showerror(
-                "Invalid",
-                "P1 (Coordinator) cannot be added or edited."
-            )
-            return
-
-        # Get partner acronym
-        partner_acronym = simpledialog.askstring(
-            "Add Partner",
-            "Enter Partner Acronym:",
-            parent=self.root
-        )
-        if not partner_acronym:
-            return
-
-        # Create and show the partner dialog
+        
+        # Extract validated partner information
+        partner_number = input_dialog.result['partner_number']
+        partner_acronym = input_dialog.result['partner_acronym']
+        
+        # Create and show the detailed partner dialog
         dialog = PartnerDialog(self.root, partner_number, partner_acronym)
         if dialog.result:
             partner_info = dialog.result
@@ -243,31 +238,271 @@ class ProjectBudgetinator:
             partner_info['partner_acronym'] = partner_acronym
 
             if add_partner_to_workbook(self.current_workbook, partner_info):
+                # Apply mapping files after 'Commit'
+                self._apply_mapping_files()
                 # Save the workbook
+                self._save_workbook(partner_number, partner_acronym)
+    def _apply_mapping_files(self):
+        """Load and apply mapping files to the workbook."""
+        try:
+            import json
+            # Load mapping files
+            with open('budget_overview_mapping.json', 'r', encoding='utf-8') as f:
+                budget_mapping = json.load(f)
+            with open('pm_overview_mapping.json', 'r', encoding='utf-8') as f:
+                pm_mapping = json.load(f)
+            with open('partner_worksheet_mapping.json', 'r', encoding='utf-8') as f:
+                partner_mapping = json.load(f)
+            # Apply mappings
+            self._apply_mappings_to_workbook(budget_mapping, pm_mapping, partner_mapping)
+        except Exception as e:
+            self.logger.error("Failed to apply mapping files", error=str(e))
+            messagebox.showerror("Mapping Error", f"Failed to apply mapping files:\n{str(e)}")
+
+    def _save_workbook(self, partner_number, partner_acronym):
+        """Save the workbook with user confirmation."""
+        try:
+            save_path = filedialog.asksaveasfilename(
+                title="Save Workbook",
+                defaultextension=".xlsx",
+                filetypes=EXCEL_FILETYPES
+            )
+            if save_path:
+                self.current_workbook.save(save_path)
+                messagebox.showinfo(
+                    "Success",
+                    f"Added partner {partner_number}: {partner_acronym}\n"
+                    f"Workbook saved to: {save_path}"
+                )
+            else:
+                messagebox.showwarning(
+                    "Warning",
+                    "Partner added but workbook not saved!"
+                )
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"Failed to save workbook:\n{str(e)}"
+            )
+
+    def _apply_mappings_to_workbook(self, budget_mapping, pm_mapping, partner_mapping):
+        """Apply mapping files to the current workbook after adding a partner."""
+        try:
+            # Apply budget_overview_mapping
+            if 'BudgetOverview' in self.current_workbook.sheetnames:
+                sheet = self.current_workbook['BudgetOverview']
+                for cell, value in budget_mapping.items():
+                    sheet[cell] = value
+            # Apply pm_overview_mapping
+            if 'PM Overview' in self.current_workbook.sheetnames:
+                sheet = self.current_workbook['PM Overview']
+                for cell, value in pm_mapping.items():
+                    sheet[cell] = value
+            # Apply partner_worksheet_mapping
+            # Apply to partner sheets P2 through P15 only
+            partner_sheets_found = []
+            for sheet_name in self.current_workbook.sheetnames:
+                if self._is_partner_worksheet(sheet_name):
+                    partner_sheets_found.append(sheet_name)
+                    sheet = self.current_workbook[sheet_name]
+                    self.logger.info(f"Applying partner formatting to worksheet: {sheet_name}")
+                    self._apply_partner_formatting(sheet, partner_mapping)
+                    self.logger.debug(f"Applied partner mapping to sheet: {sheet_name}")
+            
+            if partner_sheets_found:
+                self.logger.info(f"Applied partner formatting to {len(partner_sheets_found)} sheets: {partner_sheets_found}")
+            else:
+                self.logger.warning("No partner worksheets (P2-P15) found to apply formatting to")
+        except Exception as e:
+            self.logger.error("Error applying mappings to workbook", error=str(e))
+
+    def _is_partner_worksheet(self, sheet_name):
+        """Check if a sheet name represents a partner worksheet (P2 through P15)."""
+        if not sheet_name.startswith('P'):
+            return False
+        
+        # Extract the part after 'P'
+        rest = sheet_name[1:]
+        if not rest:
+            return False
+        
+        # Get the number part (before any space or other characters)
+        parts = rest.split()
+        if not parts:
+            return False
+        
+        number_part = parts[0]
+        
+        # Check if it's a valid number between 2 and 15
+        try:
+            partner_number = int(number_part)
+            return 2 <= partner_number <= 15
+        except ValueError:
+            return False
+
+    def _apply_partner_formatting(self, worksheet, partner_mapping):
+        """Apply partner worksheet formatting based on the mapping configuration."""
+        try:
+            from openpyxl.utils import range_boundaries
+            
+            # Check if the mapping has the expected structure
+            if 'cells' not in partner_mapping:
+                self.logger.warning("Partner mapping does not contain 'cells' key")
+                return
+            
+            cells_config = partner_mapping['cells']
+            if not isinstance(cells_config, list):
+                self.logger.warning("Cells configuration is not a list")
+                return
+                
+            self.logger.info(f"Applying formatting to {len(cells_config)} cell configurations")
+            
+            for cell_config in cells_config:
+                # Skip entries that are just comments
+                if isinstance(cell_config, str):
+                    continue
+                    
+                if not isinstance(cell_config, dict) or 'range' not in cell_config:
+                    continue
+                
+                self._apply_single_cell_config(worksheet, cell_config)
+                    
+        except Exception as e:
+            self.logger.error("Error applying partner formatting", error=str(e))
+
+    def _apply_single_cell_config(self, worksheet, cell_config):
+        """Apply configuration to a single cell or range."""
+        try:
+            from openpyxl.utils import range_boundaries
+            cell_range = cell_config['range']
+            label = cell_config.get('label', '')
+            
+            # Handle cell merging first
+            if cell_config.get('merge', False) and ':' in cell_range:
                 try:
-                    # Ask user where to save if this is a new workbook
-                    save_path = filedialog.asksaveasfilename(
-                        title="Save Workbook",
-                        defaultextension=".xlsx",
-                        filetypes=EXCEL_FILETYPES
-                    )
-                    if save_path:
-                        self.current_workbook.save(save_path)
-                        messagebox.showinfo(
-                            "Success",
-                            f"Added partner {partner_number}: {partner_acronym}\n"
-                            f"Workbook saved to: {save_path}"
-                        )
-                    else:
-                        messagebox.showwarning(
-                            "Warning",
-                            "Partner added but workbook not saved!"
-                        )
+                    worksheet.merge_cells(cell_range)
+                    self.logger.debug(f"Merged range {cell_range}")
                 except Exception as e:
-                    messagebox.showerror(
-                        "Error",
-                        f"Failed to save workbook:\n{str(e)}"
+                    self.logger.warning(f"Failed to merge range {cell_range}: {str(e)}")
+            
+            # Get cells to format
+            if ':' in cell_range:
+                # It's a range like "B2:C2"
+                min_col, min_row, _, _ = range_boundaries(cell_range)
+                
+                # Set label in the first cell
+                first_cell = worksheet.cell(row=min_row, column=min_col)
+                if label:
+                    first_cell.value = label
+                    self.logger.debug(f"Set label '{label}' in cell {first_cell.coordinate}")
+                    
+                # Apply formatting to all cells in range
+                for row in worksheet[cell_range]:
+                    if hasattr(row, '__iter__'):
+                        for cell in row:
+                            self._apply_cell_formatting(cell, cell_config)
+                    else:
+                        self._apply_cell_formatting(row, cell_config)
+                    
+            else:
+                # It's a single cell like "B10"
+                cell = worksheet[cell_range]
+                if label:
+                    cell.value = label
+                    self.logger.debug(f"Set label '{label}' in cell {cell.coordinate}")
+                self._apply_cell_formatting(cell, cell_config)
+                
+        except Exception as e:
+            cell_range = cell_config.get('range', 'unknown')
+            self.logger.warning(f"Failed to apply formatting to range {cell_range}: {str(e)}")
+
+    def _apply_cell_formatting(self, cell, config):
+        """Apply formatting to a single cell based on configuration."""
+        try:
+            from openpyxl.styles import Alignment
+            
+            # Apply fill color
+            if 'fillColor' in config:
+                fill_color = config['fillColor']
+                # Remove # if present
+                if fill_color.startswith('#'):
+                    fill_color = fill_color[1:]
+                
+                # Ensure it's uppercase for consistency
+                fill_color = fill_color.upper()
+                
+                # Validate hex color format
+                if len(fill_color) == 6 and all(c in '0123456789ABCDEF' for c in fill_color):
+                    cell.fill = PatternFill(
+                        start_color=fill_color,
+                        end_color=fill_color,
+                        fill_type='solid'
                     )
+                    self.logger.debug(f"Applied fill color #{fill_color} to cell {cell.coordinate}")
+                else:
+                    self.logger.warning(f"Invalid color format '{config['fillColor']}' for cell {cell.coordinate}")
+            
+            # Apply alignment
+            if 'alignment' in config:
+                alignment_value = config['alignment']
+                if alignment_value in ['left', 'center', 'right']:
+                    cell.alignment = Alignment(
+                        horizontal=alignment_value,
+                        vertical='center',
+                        wrap_text=True
+                    )
+                    self.logger.debug(f"Applied alignment '{alignment_value}' to cell {cell.coordinate}")
+                    
+        except Exception as e:
+            self.logger.error(f"Failed to apply cell formatting to {getattr(cell, 'coordinate', 'unknown')}: {str(e)}")
+            self.logger.error(f"Config was: {config}")
+
+    def _update_partner_worksheet(self, worksheet, partner_info, cell_map):
+        """Update partner worksheet with new values from the edit dialog."""
+        try:
+            # Update WP fields (columns C through Q, row 18)
+            for i in range(1, 16):
+                col = chr(ord('C') + i - 1)
+                cell = f'{col}18'
+                wp_key = f'wp{i}'
+                if wp_key in partner_info:
+                    self._set_cell_value_safely(worksheet, cell, partner_info[wp_key])
+            
+            # Update other fields using the cell mapping
+            for key, cell in cell_map.items():
+                if key in partner_info:
+                    self._set_cell_value_safely(worksheet, cell, partner_info[key])
+                    
+            self.logger.info("Partner worksheet updated successfully")
+        except Exception as e:
+            self.logger.error("Error updating partner worksheet", error=str(e))
+            raise
+
+    def _set_cell_value_safely(self, worksheet, cell_address, value):
+        """Safely set cell value, handling merged cells."""
+        try:
+            cell_obj = worksheet[cell_address]
+            # Check if this is a merged cell
+            if hasattr(cell_obj, 'coordinate') and cell_obj.coordinate:
+                # Check if the cell is part of a merged range
+                for merged_range in worksheet.merged_cells.ranges:
+                    if cell_obj.coordinate in merged_range:
+                        # Get the top-left cell of the merged range
+                        top_left_cell = worksheet.cell(
+                            row=merged_range.min_row,
+                            column=merged_range.min_col
+                        )
+                        top_left_cell.value = value
+                        self.logger.debug(f"Updated merged cell {cell_address} via top-left cell {top_left_cell.coordinate}")
+                        return
+            
+            # If not a merged cell, update normally
+            cell_obj.value = value
+            self.logger.debug(f"Updated cell {cell_address} with value: {value}")
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to update cell {cell_address}: {str(e)}")
+            # Continue with other cells even if one fails
 
     def delete_partner(self):
         """Open a dialog to delete a partner from the project."""
@@ -297,13 +532,10 @@ class ProjectBudgetinator:
             else:
                 return
 
-        # Get list of partner sheets (those starting with P followed by a number, excluding P1)
+        # Get list of partner sheets (P2 through P15)
         partner_sheets = []
         for sheet in self.current_workbook.sheetnames:
-            if (sheet.startswith('P') and 
-                len(sheet) > 1 and 
-                sheet[1:].split()[0].isdigit() and 
-                not sheet.startswith('P1 ')):
+            if self._is_partner_worksheet(sheet):
                 partner_sheets.append(sheet)
 
         if not partner_sheets:
@@ -339,6 +571,8 @@ class ProjectBudgetinator:
             selection = listbox.curselection()
             if selection:
                 selected_sheet = partner_sheets[selection[0]]
+                # TODO: Implement actual deletion logic
+                self.logger.info(f"Would delete partner sheet: {selected_sheet}")
                 dialog.destroy()
             else:
                 messagebox.showwarning(
@@ -404,18 +638,16 @@ class ProjectBudgetinator:
             else:
                 return
 
-        # Get list of partner sheets (P + integer > 2)
+        # Get list of partner sheets (P2 through P15)
         partner_sheets = []
         for sheet in self.current_workbook.sheetnames:
-            if sheet.startswith('P') and len(sheet) > 1:
-                parts = sheet[1:].split()
-                if parts and parts[0].isdigit() and int(parts[0]) > 2:
-                    partner_sheets.append(sheet)
+            if self._is_partner_worksheet(sheet):
+                partner_sheets.append(sheet)
 
         if not partner_sheets:
             messagebox.showinfo(
                 "No Partners",
-                "No eligible partner sheets (P > 2) found in the workbook."
+                "No eligible partner sheets (P2-P15) found in the workbook."
             )
             return
 
@@ -550,12 +782,39 @@ class ProjectBudgetinator:
                 self.root.wait_window(dialog2)
                 debug_win.destroy()
                 if dialog2.result:
-                    # Here you would update the worksheet with new values
-                    # Placeholder: just show a message
-                    messagebox.showinfo(
-                        "Edit Partner",
-                        f"Partner {partner_number} ({partner_acronym}) updated (not yet saved)."
-                    )
+                    # Update the worksheet with new values
+                    updated_partner_info = dialog2.result
+                    self._update_partner_worksheet(ws, updated_partner_info, cell_map)
+                    
+                    # Save the workbook
+                    try:
+                        save_path = filedialog.asksaveasfilename(
+                            title="Save Workbook",
+                            defaultextension=".xlsx",
+                            filetypes=EXCEL_FILETYPES
+                        )
+                        if save_path:
+                            self.current_workbook.save(save_path)
+                            messagebox.showinfo(
+                                "Success",
+                                f"Partner {partner_number} ({partner_acronym}) updated and saved to:\n{save_path}"
+                            )
+                            self.logger.info("Partner updated and workbook saved",
+                                             partner_number=partner_number,
+                                             partner_acronym=partner_acronym,
+                                             file_path=save_path)
+                        else:
+                            messagebox.showwarning(
+                                "Warning",
+                                "Partner updated but workbook not saved!"
+                            )
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Failed to save workbook:\n{str(e)}"
+                        )
+                        self.logger.error("Failed to save workbook after partner update",
+                                          error=str(e))
             else:
                 messagebox.showwarning(
                     "No Selection",
@@ -591,6 +850,184 @@ class ProjectBudgetinator:
         x = self.root.winfo_x() + (self.root.winfo_width() - w) // 2
         y = self.root.winfo_y() + (self.root.winfo_height() - h) // 2
         dialog.geometry(f"+{x}+{y}")
+
+    def manage_p1(self):
+        """Open the P1-Coord worksheet for editing."""
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        # Validate file path and content
+                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                        if not is_valid:
+                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                            self.logger.warning("Security validation failed for file",
+                                                file_path=file_path, error=error_msg)
+                            return
+                        
+                        # Sanitize file path
+                        safe_path = SecurityValidator.validate_file_path(file_path)
+                        
+                        from openpyxl import load_workbook
+                        self.current_workbook = load_workbook(safe_path)
+                        self.logger.info("Workbook loaded successfully for P1 management",
+                                         file_path=safe_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error", error=str(e))
+                        return
+                    except Exception as e:
+                        self.logger.error("Failed to load workbook for P1 management",
+                                          file_path=file_path, error=str(e))
+                        messagebox.showerror(
+                            "Error",
+                            f"Could not open workbook:\n{str(e)}"
+                        )
+                        return
+                else:
+                    self.logger.info("User cancelled workbook selection for P1 management")
+                    return
+            else:
+                self.logger.info("User declined to open workbook for P1 management")
+                return
+
+        # Check if P1-Coord worksheet exists
+        if "P1-Coord" not in self.current_workbook.sheetnames:
+            messagebox.showerror(
+                "Worksheet Not Found",
+                "The 'P1-Coord' worksheet was not found in the current workbook."
+            )
+            self.logger.warning("P1-Coord worksheet not found in workbook")
+            return
+
+        # Get the P1-Coord worksheet
+        p1_worksheet = self.current_workbook["P1-Coord"]
+        
+        # Create the P1 management dialog
+        p1_dialog = tk.Toplevel(self.root)
+        p1_dialog.title("Manage P1 - Coordinator")
+        p1_dialog.geometry("800x600")
+        p1_dialog.grab_set()
+
+        # Create a frame for the content
+        main_frame = ttk.Frame(p1_dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Title label
+        title_label = ttk.Label(
+            main_frame,
+            text="P1 - Coordinator Management",
+            font=("Arial", 14, "bold")
+        )
+        title_label.pack(pady=(0, 10))
+
+        # Create a text widget to display/edit worksheet content
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Text widget with scrollbars
+        text_widget = tk.Text(text_frame, wrap=tk.WORD, width=80, height=25)
+        v_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+        h_scrollbar = ttk.Scrollbar(text_frame, orient=tk.HORIZONTAL, command=text_widget.xview)
+        text_widget.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        # Grid the text widget and scrollbars
+        text_widget.grid(row=0, column=0, sticky="nsew")
+        v_scrollbar.grid(row=0, column=1, sticky="ns")
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        text_frame.grid_rowconfigure(0, weight=1)
+        text_frame.grid_columnconfigure(0, weight=1)
+
+        # Load worksheet content into text widget
+        content = "P1-Coord Worksheet Content:\n\n"
+        try:
+            # Read some key cells from the worksheet
+            for row in range(1, min(21, p1_worksheet.max_row + 1)):  # Show first 20 rows
+                row_content = []
+                for col in range(1, min(11, p1_worksheet.max_column + 1)):  # Show first 10 columns
+                    cell_value = p1_worksheet.cell(row=row, column=col).value
+                    if cell_value is None:
+                        cell_value = ""
+                    row_content.append(str(cell_value))
+                content += f"Row {row}: {' | '.join(row_content)}\n"
+        except Exception as e:
+            content += f"Error reading worksheet: {str(e)}\n"
+
+        text_widget.insert(tk.END, content)
+        text_widget.insert(tk.END, "\n\nNote: This is a read-only view of the P1-Coord worksheet.\n")
+        text_widget.insert(tk.END, "For full editing capabilities, please use Excel directly.")
+
+        # Make text widget read-only
+        text_widget.config(state=tk.DISABLED)
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        # Buttons
+        def open_in_excel():
+            """Open the workbook in Excel for editing."""
+            try:
+                # Save current workbook to temp file and open in Excel
+                temp_file = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+                temp_file.close()
+                
+                self.current_workbook.save(temp_file.name)
+                
+                # Open in Excel (Windows)
+                subprocess.run(['start', 'excel', temp_file.name], shell=True)
+                
+                messagebox.showinfo(
+                    "Excel Opened",
+                    "The workbook has been opened in Excel.\n"
+                    "Please save your changes and reload the workbook in this application."
+                )
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to open in Excel:\n{str(e)}")
+
+        def refresh_view():
+            """Refresh the worksheet view."""
+            try:
+                # Reload the worksheet content
+                text_widget.config(state=tk.NORMAL)
+                text_widget.delete(1.0, tk.END)
+                
+                content = "P1-Coord Worksheet Content:\n\n"
+                for row in range(1, min(21, p1_worksheet.max_row + 1)):
+                    row_content = []
+                    for col in range(1, min(11, p1_worksheet.max_column + 1)):
+                        cell_value = p1_worksheet.cell(row=row, column=col).value
+                        if cell_value is None:
+                            cell_value = ""
+                        row_content.append(str(cell_value))
+                    content += f"Row {row}: {' | '.join(row_content)}\n"
+                
+                text_widget.insert(tk.END, content)
+                text_widget.insert(tk.END, "\n\nNote: This is a read-only view of the P1-Coord worksheet.\n")
+                text_widget.insert(tk.END, "For full editing capabilities, please use Excel directly.")
+                text_widget.config(state=tk.DISABLED)
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to refresh view:\n{str(e)}")
+
+        # Add buttons
+        ttk.Button(button_frame, text="Open in Excel", command=open_in_excel).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Refresh View", command=refresh_view).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=p1_dialog.destroy).pack(side=tk.RIGHT)
+
+        # Log the action
+        self.logger.info("P1 management dialog opened")
 
     def add_workpackage(self):
         """Open a dialog to add a new workpackage to the project."""
@@ -662,7 +1099,9 @@ class ProjectBudgetinator:
                 )
 
     def delete_workpackage(self):
-        pass
+        """Delete a workpackage from the project."""
+        # TODO: Implement workpackage deletion functionality
+        not_implemented_yet("Delete Workpackage")
 
     def edit_workpackage(self):
         """Open a dialog to edit a workpackage."""
@@ -735,8 +1174,8 @@ class ProjectBudgetinator:
 
     def _setup_preferences_menu(self, menubar):
         """Set up the Preferences menu."""
-        pref_menu = tk.Menu(menubar, tearoff=0)
-        # ...existing code...
+        # TODO: Implement preferences menu setup
+        pass
 
     def clone_file(self):
         """Clone an Excel file to a new location with user-provided details. Prompts for new name, extension and optional project name."""
@@ -757,7 +1196,7 @@ class ProjectBudgetinator:
             if not is_valid:
                 messagebox.showerror("Security Error", f"Cannot clone file: {error_msg}")
                 self.logger.warning("Security validation failed for source file",
-                                  file_path=src_path, error=error_msg)
+                                    file_path=src_path, error=error_msg)
                 return
             
             # Sanitize source path
@@ -823,8 +1262,6 @@ class ProjectBudgetinator:
         try:
             # Validate final destination path
             safe_dest_path = SecurityValidator.validate_file_path(dest_path)
-            
-            import shutil
             shutil.copy2(safe_src_path, safe_dest_path)
             messagebox.showinfo(
                 "Clone Complete",
@@ -853,9 +1290,6 @@ class ProjectBudgetinator:
         """Compare Excel files and display differences in a dialog."""
         if self.developer_mode:
             dev_log("Compare files triggered.")
-
-        import pandas as pd
-        import tkinter as tk
         from tkinter import ttk
 
         # Select files to compare
