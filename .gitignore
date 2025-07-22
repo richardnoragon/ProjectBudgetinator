@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Python cache directories
+*/__pycache__/
+**/__pycache__/
+
 # C extensions
 *.so
 
@@ -140,6 +144,17 @@ backups/
 .idea/
 *.swp
 *.swo
+
+# Backup and temporary files
+*.bak
+*.bak2
+*.backup
+*.tmp
+*.temp
+*.old
+*.orig
+*.new
+*~
 
 # OS
 .DS_Store

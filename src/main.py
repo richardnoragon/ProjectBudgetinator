@@ -238,27 +238,8 @@ class ProjectBudgetinator:
             partner_info['partner_acronym'] = partner_acronym
 
             if add_partner_to_workbook(self.current_workbook, partner_info):
-                # Apply mapping files after 'Commit'
-                self._apply_mapping_files()
                 # Save the workbook
                 self._save_workbook(partner_number, partner_acronym)
-    def _apply_mapping_files(self):
-        """Load and apply mapping files to the workbook."""
-        try:
-            import json
-            # Load mapping files
-            with open('budget_overview_mapping.json', 'r', encoding='utf-8') as f:
-                budget_mapping = json.load(f)
-            with open('pm_overview_mapping.json', 'r', encoding='utf-8') as f:
-                pm_mapping = json.load(f)
-            with open('partner_worksheet_mapping.json', 'r', encoding='utf-8') as f:
-                partner_mapping = json.load(f)
-            # Apply mappings
-            self._apply_mappings_to_workbook(budget_mapping, pm_mapping, partner_mapping)
-        except Exception as e:
-            self.logger.error("Failed to apply mapping files", error=str(e))
-            messagebox.showerror("Mapping Error", f"Failed to apply mapping files:\n{str(e)}")
-
     def _save_workbook(self, partner_number, partner_acronym):
         """Save the workbook with user confirmation."""
         try:
@@ -285,37 +266,6 @@ class ProjectBudgetinator:
                 f"Failed to save workbook:\n{str(e)}"
             )
 
-    def _apply_mappings_to_workbook(self, budget_mapping, pm_mapping, partner_mapping):
-        """Apply mapping files to the current workbook after adding a partner."""
-        try:
-            # Apply budget_overview_mapping
-            if 'BudgetOverview' in self.current_workbook.sheetnames:
-                sheet = self.current_workbook['BudgetOverview']
-                for cell, value in budget_mapping.items():
-                    sheet[cell] = value
-            # Apply pm_overview_mapping
-            if 'PM Overview' in self.current_workbook.sheetnames:
-                sheet = self.current_workbook['PM Overview']
-                for cell, value in pm_mapping.items():
-                    sheet[cell] = value
-            # Apply partner_worksheet_mapping
-            # Apply to partner sheets P2 through P15 only
-            partner_sheets_found = []
-            for sheet_name in self.current_workbook.sheetnames:
-                if self._is_partner_worksheet(sheet_name):
-                    partner_sheets_found.append(sheet_name)
-                    sheet = self.current_workbook[sheet_name]
-                    self.logger.info(f"Applying partner formatting to worksheet: {sheet_name}")
-                    self._apply_partner_formatting(sheet, partner_mapping)
-                    self.logger.debug(f"Applied partner mapping to sheet: {sheet_name}")
-            
-            if partner_sheets_found:
-                self.logger.info(f"Applied partner formatting to {len(partner_sheets_found)} sheets: {partner_sheets_found}")
-            else:
-                self.logger.warning("No partner worksheets (P2-P15) found to apply formatting to")
-        except Exception as e:
-            self.logger.error("Error applying mappings to workbook", error=str(e))
-
     def _is_partner_worksheet(self, sheet_name):
         """Check if a sheet name represents a partner worksheet (P2 through P15)."""
         if not sheet_name.startswith('P'):
@@ -339,123 +289,6 @@ class ProjectBudgetinator:
             return 2 <= partner_number <= 15
         except ValueError:
             return False
-
-    def _apply_partner_formatting(self, worksheet, partner_mapping):
-        """Apply partner worksheet formatting based on the mapping configuration."""
-        try:
-            from openpyxl.utils import range_boundaries
-            
-            # Check if the mapping has the expected structure
-            if 'cells' not in partner_mapping:
-                self.logger.warning("Partner mapping does not contain 'cells' key")
-                return
-            
-            cells_config = partner_mapping['cells']
-            if not isinstance(cells_config, list):
-                self.logger.warning("Cells configuration is not a list")
-                return
-                
-            self.logger.info(f"Applying formatting to {len(cells_config)} cell configurations")
-            
-            for cell_config in cells_config:
-                # Skip entries that are just comments
-                if isinstance(cell_config, str):
-                    continue
-                    
-                if not isinstance(cell_config, dict) or 'range' not in cell_config:
-                    continue
-                
-                self._apply_single_cell_config(worksheet, cell_config)
-                    
-        except Exception as e:
-            self.logger.error("Error applying partner formatting", error=str(e))
-
-    def _apply_single_cell_config(self, worksheet, cell_config):
-        """Apply configuration to a single cell or range."""
-        try:
-            from openpyxl.utils import range_boundaries
-            cell_range = cell_config['range']
-            label = cell_config.get('label', '')
-            
-            # Handle cell merging first
-            if cell_config.get('merge', False) and ':' in cell_range:
-                try:
-                    worksheet.merge_cells(cell_range)
-                    self.logger.debug(f"Merged range {cell_range}")
-                except Exception as e:
-                    self.logger.warning(f"Failed to merge range {cell_range}: {str(e)}")
-            
-            # Get cells to format
-            if ':' in cell_range:
-                # It's a range like "B2:C2"
-                min_col, min_row, _, _ = range_boundaries(cell_range)
-                
-                # Set label in the first cell
-                first_cell = worksheet.cell(row=min_row, column=min_col)
-                if label:
-                    first_cell.value = label
-                    self.logger.debug(f"Set label '{label}' in cell {first_cell.coordinate}")
-                    
-                # Apply formatting to all cells in range
-                for row in worksheet[cell_range]:
-                    if hasattr(row, '__iter__'):
-                        for cell in row:
-                            self._apply_cell_formatting(cell, cell_config)
-                    else:
-                        self._apply_cell_formatting(row, cell_config)
-                    
-            else:
-                # It's a single cell like "B10"
-                cell = worksheet[cell_range]
-                if label:
-                    cell.value = label
-                    self.logger.debug(f"Set label '{label}' in cell {cell.coordinate}")
-                self._apply_cell_formatting(cell, cell_config)
-                
-        except Exception as e:
-            cell_range = cell_config.get('range', 'unknown')
-            self.logger.warning(f"Failed to apply formatting to range {cell_range}: {str(e)}")
-
-    def _apply_cell_formatting(self, cell, config):
-        """Apply formatting to a single cell based on configuration."""
-        try:
-            from openpyxl.styles import Alignment
-            
-            # Apply fill color
-            if 'fillColor' in config:
-                fill_color = config['fillColor']
-                # Remove # if present
-                if fill_color.startswith('#'):
-                    fill_color = fill_color[1:]
-                
-                # Ensure it's uppercase for consistency
-                fill_color = fill_color.upper()
-                
-                # Validate hex color format
-                if len(fill_color) == 6 and all(c in '0123456789ABCDEF' for c in fill_color):
-                    cell.fill = PatternFill(
-                        start_color=fill_color,
-                        end_color=fill_color,
-                        fill_type='solid'
-                    )
-                    self.logger.debug(f"Applied fill color #{fill_color} to cell {cell.coordinate}")
-                else:
-                    self.logger.warning(f"Invalid color format '{config['fillColor']}' for cell {cell.coordinate}")
-            
-            # Apply alignment
-            if 'alignment' in config:
-                alignment_value = config['alignment']
-                if alignment_value in ['left', 'center', 'right']:
-                    cell.alignment = Alignment(
-                        horizontal=alignment_value,
-                        vertical='center',
-                        wrap_text=True
-                    )
-                    self.logger.debug(f"Applied alignment '{alignment_value}' to cell {cell.coordinate}")
-                    
-        except Exception as e:
-            self.logger.error(f"Failed to apply cell formatting to {getattr(cell, 'coordinate', 'unknown')}: {str(e)}")
-            self.logger.error(f"Config was: {config}")
 
     def _update_partner_worksheet(self, worksheet, partner_info, cell_map):
         """Update partner worksheet with new values from the edit dialog."""
@@ -709,25 +542,28 @@ class ProjectBudgetinator:
                     'name_of_beneficiary': 'D5',
                     'country': 'D6',
                     'role': 'D7',
-                    'name_subcontractor_1': 'D20',
-                    'sum_subcontractor_1': 'D21',
-                    'explanation_subcontractor_1': 'D22',
-                    'name_subcontractor_2': 'D24',
-                    'sum_subcontractor_2': 'D25',
-                    'explanation_subcontractor_2': 'D26',
+                    'name_subcontractor_1': 'D22',
+                    'sum_subcontractor_1': 'F22',
+                    'explanation_subcontractor_1': 'G22',
+                    'name_subcontractor_2': 'D23',
+                    'sum_subcontractor_2': 'F23',
+                    'explanation_subcontractor_2': 'G23',
                     'sum_travel': 'F28',
                     'sum_equipment': 'F29',
                     'sum_other': 'F30',
-                    'sum_financial_support': 'F31',
-                    'sum_internal_goods': 'F32',
-                    'sum_income_generated': 'F33',
-                    'sum_financial_contributions': 'F34',
-                    'sum_own_resources': 'F35',
-                    'explanation_financial_support': 'G36',
-                    'explanation_internal_goods': 'G37',
-                    'explanation_income_generated': 'G38',
-                    'explanation_financial_contributions': 'G39',
-                    'explanation_own_resources': 'G40',
+                    'sum_financial_support': 'F35',
+                    'sum_internal_goods': 'F36',
+                    'sum_income_generated': 'F42',
+                    'sum_financial_contributions': 'F43',
+                    'sum_own_resources': 'F44',
+                    'explanation_travel': 'G28',
+                    'explanation_equipment': 'G29',
+                    'explanation_other': 'G30',
+                    'explanation_financial_support': 'G35',
+                    'explanation_internal_goods': 'G36',
+                    'explanation_income_generated': 'G42',
+                    'explanation_financial_contributions': 'G43',
+                    'explanation_own_resources': 'G44',
                 }
                 # WP fields
                 debug_text.insert("end", "\nReading WP fields:\n")
@@ -746,7 +582,7 @@ class ProjectBudgetinator:
                 # Other fields
                 debug_text.insert("end", "\nReading other fields:\n")
                 for key, cell in cell_map.items():
-                    debug_text.insert("end", f"Reading {key} from {cell}... ")
+                    debug_text.insert("end", f"Reading {key} from cell {cell}... ")
                     try:
                         value = ws[cell].value
                         partner_info[key] = value if value is not None else ''
@@ -758,33 +594,41 @@ class ProjectBudgetinator:
                 partner_info['project_partner_number'] = partner_number
                 partner_info['partner_acronym'] = partner_acronym
 
-                # Log all collected values
-                debug_text.insert("end", "\nFinal collected values:\n")
+                # Log all collected values with cell origins
+                debug_text.insert("end", "\nFinal collected values with cell origins:\n")
                 for key, value in partner_info.items():
-                    debug_text.insert("end", f"{key}: {value}\n")
+                    if key in cell_map:
+                        cell_ref = cell_map[key]
+                        debug_text.insert("end", f"{key}: {value} (from cell {cell_ref})\n")
+                    elif key.startswith('wp') and key != 'wp':
+                        # Handle WP fields
+                        wp_num = key[2:]  # Extract number from wp1, wp2, etc.
+                        try:
+                            wp_index = int(wp_num) - 1
+                            col = chr(ord('C') + wp_index)
+                            cell_ref = f'{col}18'
+                            debug_text.insert("end", f"{key}: {value} (from cell {cell_ref})\n")
+                        except (ValueError, IndexError):
+                            debug_text.insert("end", f"{key}: {value}\n")
+                    else:
+                        debug_text.insert("end", f"{key}: {value}\n")
                 debug_text.see("end")
 
-                # Show the EditPartnerDialog with pre-filled values
-                from handlers.edit_partner_handler import EditPartnerDialog
+                # Show the EditPartnerDialog with worksheet integration
+                from handlers.edit_partner_handler import edit_partner_from_worksheet
                 
-                debug_text.insert("end", "\nCreating EditPartnerDialog...\n")
-                dialog2 = EditPartnerDialog(
-                    self.root,
-                    partner_number,
-                    partner_acronym,
-                    initial_values=partner_info
-                )
-                
-                debug_text.insert("end", "Waiting for dialog...\n")
+                debug_text.insert("end", "\nOpening EditPartnerDialog with worksheet integration...\n")
                 debug_text.see("end")
                 
-                # Wait for dialog
-                self.root.wait_window(dialog2)
+                # Close debug window before opening edit dialog
                 debug_win.destroy()
-                if dialog2.result:
-                    # Update the worksheet with new values
-                    updated_partner_info = dialog2.result
-                    self._update_partner_worksheet(ws, updated_partner_info, cell_map)
+                
+                # Use the new worksheet-integrated edit function
+                result = edit_partner_from_worksheet(self.root, self.current_workbook, selected_sheet)
+                
+                if result:
+                    # The worksheet has already been updated by the edit handler
+                    updated_partner_info = result
                     
                     # Save the workbook
                     try:
@@ -852,182 +696,92 @@ class ProjectBudgetinator:
         dialog.geometry(f"+{x}+{y}")
 
     def manage_p1(self):
-        """Open the P1-Coord worksheet for editing."""
-        # Check if we have an open workbook
-        if self.current_workbook is None:
-            response = messagebox.askyesno(
-                "No Workbook Open",
-                "No workbook is currently open. Would you like to open one now?"
-            )
-            if response:
-                file_path = filedialog.askopenfilename(
-                    title="Open Excel Workbook",
-                    filetypes=EXCEL_FILETYPES
-                )
-                if file_path:
-                    try:
-                        # Validate file path and content
-                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
-                        if not is_valid:
-                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
-                            self.logger.warning("Security validation failed for file",
-                                                file_path=file_path, error=error_msg)
-                            return
-                        
-                        # Sanitize file path
-                        safe_path = SecurityValidator.validate_file_path(file_path)
-                        
-                        from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(safe_path)
-                        self.logger.info("Workbook loaded successfully for P1 management",
-                                         file_path=safe_path)
-                    except ValueError as e:
-                        messagebox.showerror("Security Error", str(e))
-                        self.logger.warning("Security validation error", error=str(e))
-                        return
-                    except Exception as e:
-                        self.logger.error("Failed to load workbook for P1 management",
-                                          file_path=file_path, error=str(e))
-                        messagebox.showerror(
-                            "Error",
-                            f"Could not open workbook:\n{str(e)}"
-                        )
-                        return
-                else:
-                    self.logger.info("User cancelled workbook selection for P1 management")
-                    return
-            else:
-                self.logger.info("User declined to open workbook for P1 management")
+        """Load the P1-Coord worksheet into a UI for editing."""
+        # Always prompt for file selection
+        file_path = filedialog.askopenfilename(
+            title="Open Excel Workbook for P1 Management",
+            filetypes=EXCEL_FILETYPES
+        )
+        
+        if not file_path:
+            return
+            
+        try:
+            # Validate file path and content
+            is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+            if not is_valid:
+                messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                self.logger.warning("Security validation failed for file",
+                                    file_path=file_path, error=error_msg)
                 return
+            
+            # Sanitize file path
+            safe_path = SecurityValidator.validate_file_path(file_path)
+            
+            from openpyxl import load_workbook
+            workbook = load_workbook(safe_path)
+            self.logger.info("Workbook loaded successfully for P1 management",
+                             file_path=safe_path)
+        except ValueError as e:
+            messagebox.showerror("Security Error", str(e))
+            self.logger.warning("Security validation error", error=str(e))
+            return
+        except Exception as e:
+            self.logger.error("Failed to load workbook for P1 management",
+                              file_path=file_path, error=str(e))
+            messagebox.showerror(
+                "Error",
+                f"Could not open workbook:\n{str(e)}"
+            )
+            return
 
         # Check if P1-Coord worksheet exists
-        if "P1-Coord" not in self.current_workbook.sheetnames:
+        if "P1-Coord" not in workbook.sheetnames:
             messagebox.showerror(
                 "Worksheet Not Found",
-                "The 'P1-Coord' worksheet was not found in the current workbook."
+                "The 'P1-Coord' worksheet was not found in the selected workbook."
             )
             self.logger.warning("P1-Coord worksheet not found in workbook")
             return
 
-        # Get the P1-Coord worksheet
-        p1_worksheet = self.current_workbook["P1-Coord"]
-        
-        # Create the P1 management dialog
-        p1_dialog = tk.Toplevel(self.root)
-        p1_dialog.title("Manage P1 - Coordinator")
-        p1_dialog.geometry("800x600")
-        p1_dialog.grab_set()
+        # Set the current workbook to the loaded one
+        self.current_workbook = workbook
 
-        # Create a frame for the content
-        main_frame = ttk.Frame(p1_dialog)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Title label
-        title_label = ttk.Label(
-            main_frame,
-            text="P1 - Coordinator Management",
-            font=("Arial", 14, "bold")
-        )
-        title_label.pack(pady=(0, 10))
-
-        # Create a text widget to display/edit worksheet content
-        text_frame = ttk.Frame(main_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Text widget with scrollbars
-        text_widget = tk.Text(text_frame, wrap=tk.WORD, width=80, height=25)
-        v_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
-        h_scrollbar = ttk.Scrollbar(text_frame, orient=tk.HORIZONTAL, command=text_widget.xview)
-        text_widget.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-
-        # Grid the text widget and scrollbars
-        text_widget.grid(row=0, column=0, sticky="nsew")
-        v_scrollbar.grid(row=0, column=1, sticky="ns")
-        h_scrollbar.grid(row=1, column=0, sticky="ew")
-
-        text_frame.grid_rowconfigure(0, weight=1)
-        text_frame.grid_columnconfigure(0, weight=1)
-
-        # Load worksheet content into text widget
-        content = "P1-Coord Worksheet Content:\n\n"
+        # Get the P1-Coord worksheet and open it in the UI
         try:
-            # Read some key cells from the worksheet
-            for row in range(1, min(21, p1_worksheet.max_row + 1)):  # Show first 20 rows
-                row_content = []
-                for col in range(1, min(11, p1_worksheet.max_column + 1)):  # Show first 10 columns
-                    cell_value = p1_worksheet.cell(row=row, column=col).value
-                    if cell_value is None:
-                        cell_value = ""
-                    row_content.append(str(cell_value))
-                content += f"Row {row}: {' | '.join(row_content)}\n"
+            from handlers.p1_manager_handler import P1ManagerDialog
+            
+            p1_worksheet = self.current_workbook["P1-Coord"]
+            
+            # Open the P1 management dialog
+            dialog = P1ManagerDialog(self.root, p1_worksheet, file_path)
+            
+            # Check if changes were made and save if needed
+            if dialog.result and dialog.result.get('changes_made', False):
+                try:
+                    # Save the workbook
+                    self.current_workbook.save(file_path)
+                    messagebox.showinfo(
+                        "Saved",
+                        f"Changes have been saved to:\n{file_path}"
+                    )
+                    self.logger.info("P1 coordinator data saved successfully", file_path=file_path)
+                except Exception as save_error:
+                    messagebox.showerror(
+                        "Save Error",
+                        f"Failed to save the workbook:\n{str(save_error)}"
+                    )
+                    self.logger.error("Failed to save P1 workbook", error=str(save_error))
+            
+        except ImportError as e:
+            messagebox.showerror(
+                "Import Error",
+                f"Failed to load P1 manager dialog:\n{str(e)}"
+            )
+            self.logger.error("Failed to import P1ManagerDialog", error=str(e))
         except Exception as e:
-            content += f"Error reading worksheet: {str(e)}\n"
-
-        text_widget.insert(tk.END, content)
-        text_widget.insert(tk.END, "\n\nNote: This is a read-only view of the P1-Coord worksheet.\n")
-        text_widget.insert(tk.END, "For full editing capabilities, please use Excel directly.")
-
-        # Make text widget read-only
-        text_widget.config(state=tk.DISABLED)
-
-        # Button frame
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
-
-        # Buttons
-        def open_in_excel():
-            """Open the workbook in Excel for editing."""
-            try:
-                # Save current workbook to temp file and open in Excel
-                temp_file = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-                temp_file.close()
-                
-                self.current_workbook.save(temp_file.name)
-                
-                # Open in Excel (Windows)
-                subprocess.run(['start', 'excel', temp_file.name], shell=True)
-                
-                messagebox.showinfo(
-                    "Excel Opened",
-                    "The workbook has been opened in Excel.\n"
-                    "Please save your changes and reload the workbook in this application."
-                )
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to open in Excel:\n{str(e)}")
-
-        def refresh_view():
-            """Refresh the worksheet view."""
-            try:
-                # Reload the worksheet content
-                text_widget.config(state=tk.NORMAL)
-                text_widget.delete(1.0, tk.END)
-                
-                content = "P1-Coord Worksheet Content:\n\n"
-                for row in range(1, min(21, p1_worksheet.max_row + 1)):
-                    row_content = []
-                    for col in range(1, min(11, p1_worksheet.max_column + 1)):
-                        cell_value = p1_worksheet.cell(row=row, column=col).value
-                        if cell_value is None:
-                            cell_value = ""
-                        row_content.append(str(cell_value))
-                    content += f"Row {row}: {' | '.join(row_content)}\n"
-                
-                text_widget.insert(tk.END, content)
-                text_widget.insert(tk.END, "\n\nNote: This is a read-only view of the P1-Coord worksheet.\n")
-                text_widget.insert(tk.END, "For full editing capabilities, please use Excel directly.")
-                text_widget.config(state=tk.DISABLED)
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to refresh view:\n{str(e)}")
-
-        # Add buttons
-        ttk.Button(button_frame, text="Open in Excel", command=open_in_excel).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Refresh View", command=refresh_view).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=p1_dialog.destroy).pack(side=tk.RIGHT)
-
-        # Log the action
-        self.logger.info("P1 management dialog opened")
+            messagebox.showerror("Error", f"Failed to open P1 management dialog:\n{str(e)}")
+            self.logger.error("Failed to open P1 management dialog", error=str(e))
 
     def add_workpackage(self):
         """Open a dialog to add a new workpackage to the project."""
