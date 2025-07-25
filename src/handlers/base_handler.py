@@ -68,13 +68,13 @@ class BaseHandler(ABC):
     resource management across all handler modules.
     """
     
-    def __init__(self, parent_window: tk.Widget,
+    def __init__(self, parent_window: Optional[tk.Widget],
                  workbook_path: Optional[str] = None):
         """
         Initialize base handler.
         
         Args:
-            parent_window: Parent tkinter window
+            parent_window: Parent tkinter window (can be None for automatic operations)
             workbook_path: Path to Excel workbook (optional)
         """
         self.parent = parent_window
@@ -166,8 +166,9 @@ class BaseHandler(ABC):
             message: Error message
             title: Dialog title
         """
-        from tkinter import messagebox
-        messagebox.showerror(title, message)
+        if self.parent:
+            from tkinter import messagebox
+            messagebox.showerror(title, message)
         self.logger.error(message)
     
     def show_success(self, message: str, title: str = "Success") -> None:
@@ -178,8 +179,9 @@ class BaseHandler(ABC):
             message: Success message
             title: Dialog title
         """
-        from tkinter import messagebox
-        messagebox.showinfo(title, message)
+        if self.parent:
+            from tkinter import messagebox
+            messagebox.showinfo(title, message)
         self.logger.info(message)
     
     def show_warning(self, message: str, title: str = "Warning") -> None:
@@ -190,8 +192,9 @@ class BaseHandler(ABC):
             message: Warning message
             title: Dialog title
         """
-        from tkinter import messagebox
-        messagebox.showwarning(title, message)
+        if self.parent:
+            from tkinter import messagebox
+            messagebox.showwarning(title, message)
         self.logger.warning(message)
     
     def show_confirmation(self, message: str, title: str = "Confirm") -> bool:
@@ -205,8 +208,13 @@ class BaseHandler(ABC):
         Returns:
             bool: True if confirmed, False otherwise
         """
-        from tkinter import messagebox
-        return messagebox.askyesno(title, message)
+        if self.parent:
+            from tkinter import messagebox
+            return messagebox.askyesno(title, message)
+        else:
+            # For automatic operations, log the confirmation request and return True
+            self.logger.info(f"Auto-confirmation: {message}")
+            return True
     
     def get_operation_history(self) -> List[OperationResult]:
         """
@@ -248,8 +256,8 @@ class BaseHandler(ABC):
         
         return result
     
-    def validate_required_fields(self, data: Dict[str, Any], 
-                                required_fields: List[str]) -> ValidationResult:
+    def validate_required_fields(self, data: Dict[str, Any],
+                                 required_fields: List[str]) -> ValidationResult:
         """
         Validate required fields in data.
         
@@ -263,13 +271,20 @@ class BaseHandler(ABC):
         result = ValidationResult()
         
         for field in required_fields:
-            if field not in data or data[field] is None or str(data[field]).strip() == "":
+            # For required fields, we need to check if the field is truly missing or empty
+            # Note: 0 is a valid value for required numeric fields
+            if field not in data or data[field] is None:
                 result.add_error(f"{field} is required")
+            elif isinstance(data[field], str) and str(data[field]).strip() == "":
+                result.add_error(f"{field} is required")
+            elif isinstance(data[field], (int, float)) and data[field] == 0:
+                # 0 is a valid value for numeric fields, don't treat as missing
+                pass
         
         return result
     
-    def validate_numeric_fields(self, data: Dict[str, Any], 
-                               numeric_fields: List[str]) -> ValidationResult:
+    def validate_numeric_fields(self, data: Dict[str, Any],
+                                numeric_fields: List[str]) -> ValidationResult:
         """
         Validate numeric fields.
         
@@ -284,8 +299,15 @@ class BaseHandler(ABC):
         
         for field in numeric_fields:
             if field in data and data[field] is not None:
+                # Handle the case where data[field] might already be a number
+                if isinstance(data[field], (int, float)):
+                    # Already a valid number, including 0
+                    continue
                 try:
-                    float(str(data[field]))
+                    # Try to convert string to number
+                    converted = float(str(data[field]))
+                    # Update the data with the converted value
+                    data[field] = converted
                 except (ValueError, TypeError):
                     result.add_error(f"{field} must be a valid number")
         
@@ -525,7 +547,9 @@ def cleanup_all_handlers():
     # Force cleanup of Excel resources
     force_system_cleanup()
     
-    logger.info("All handlers cleaned up")
+    # Get logger for cleanup
+    cleanup_logger = logging.getLogger(__name__)
+    cleanup_logger.info("All handlers cleaned up")
 
 
 # Register cleanup on application exit

@@ -244,7 +244,16 @@ class BaseDialog(tk.Toplevel, ABC):
         logger.debug(f"Created dialog: {self.window_id}")
     
     def _center_dialog(self):
-        """Center the dialog on parent window."""
+        """Position the dialog according to user preferences."""
+        try:
+            from utils.window_positioning import position_dialog
+            position_dialog(self, self.parent, self.__class__.__name__)
+        except ImportError:
+            # Fallback to original centering if positioning module not available
+            self._fallback_center_dialog()
+    
+    def _fallback_center_dialog(self):
+        """Fallback dialog centering method."""
         self.update_idletasks()
         
         # Get parent window position

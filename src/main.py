@@ -2,12 +2,44 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-"""
-main.py
+"""ProjectBudgetinator Main Application Module.
 
-Main application logic for ProjectBudgetinator.
-Handles the Tkinter GUI, Excel file operations, partner management, diagnostics,
-directory/config creation, and version history tracking.
+This module contains the main application logic for ProjectBudgetinator, a comprehensive
+Excel workbook management tool for project budget coordination. It provides a Tkinter-based
+GUI interface for managing partners, workpackages, and budget overviews in Excel files.
+
+The module handles:
+    - Tkinter GUI setup and management
+    - Excel file operations (open, save, validate)
+    - Partner management (add, edit, delete)
+    - Workpackage management (add, edit, delete)
+    - Budget overview updates and PM overview updates
+    - User authentication and profile management
+    - Window positioning and theme management
+    - Performance monitoring and diagnostics
+    - File comparison and cloning operations
+    - Batch operations and preferences management
+
+Classes:
+    ProjectBudgetinator: Main application class that orchestrates all functionality
+
+Constants:
+    DEFAULT_USER_CONFIG: Default user configuration settings
+    DEFAULT_BACKUP_CONFIG: Default backup configuration settings
+    DEFAULT_DIAGNOSTIC_CONFIG: Default diagnostic configuration settings
+    EXCEL_FILETYPES: Supported Excel file types for dialogs
+    EXCEL_DEFAULT_EXT: Default Excel file extension
+
+Example:
+    Basic usage of the application:
+    
+        app = ProjectBudgetinator()
+        app.run()
+
+Note:
+    This module requires proper authentication setup and preferences management
+    to function correctly. All file operations are secured through centralized
+    validation mechanisms.
 """
 
 import json
@@ -25,12 +57,30 @@ from version import full_version_string  # Only import what we use
 from logger import setup_logging, get_structured_logger, LogContext
 from utils.error_handler import setup_error_handling, handle_exceptions
 from utils.performance_monitor import get_performance_monitor, monitor_performance
+from utils.performance_optimizations import get_performance_optimizer, monitor_operation
 from utils.security_validator import SecurityValidator, InputSanitizer
+from utils.workbook_utils import (
+    validate_and_load_workbook, save_workbook_with_dialog,
+    ensure_workbook_loaded, create_workbook_operation_context,
+    prompt_for_workbook_if_needed, is_partner_worksheet
+)
+from utils.update_utils import (
+    UpdateBatch, execute_update_batch, create_standard_update_batch,
+    validate_positive_number, validate_non_negative_number
+)
+from utils.user_utils import construct_user_safely, UserConstructor
 from gui.performance_monitor_gui import show_performance_monitor, PerformanceIndicator
-from openpyxl.styles import PatternFill  # Used in _add_partner_worksheet
 from validation import FormValidator
 from gui.batch_operations import show_batch_operations_dialog
-import openpyxl.utils.cell
+
+# Safe openpyxl imports with fallback
+try:
+    from openpyxl.styles import PatternFill  # Used in _add_partner_worksheet
+    import openpyxl.utils.cell
+    OPENPYXL_STYLES_AVAILABLE = True
+except ImportError:
+    PatternFill = None
+    OPENPYXL_STYLES_AVAILABLE = False
 
 # Application config defaults
 DEFAULT_USER_CONFIG = {
@@ -62,12 +112,105 @@ ENTER_FILE_EXT = "Enter file extension:"
 VERSION_HISTORY_COLUMNS = ["Timestamp", "Version Info", "Summary"]
 
 class ProjectBudgetinator:
+    """Main application class for ProjectBudgetinator.
+    
+    This class orchestrates the entire ProjectBudgetinator application, providing
+    a comprehensive Tkinter-based GUI for Excel workbook management, partner
+    administration, workpackage handling, and budget coordination.
+    
+    The class manages:
+        - Application initialization and authentication
+        - GUI setup and menu management
+        - Excel workbook operations (open, save, validate)
+        - Partner management (add, edit, delete)
+        - Workpackage management (add, edit, delete)
+        - Budget and PM overview updates
+        - User preferences and theme management
+        - Window positioning and performance monitoring
+        - File operations (clone, compare, create)
+        - Diagnostics and help systems
+    
+    Attributes:
+        root (tk.Tk): Main Tkinter window
+        developer_mode (bool): Flag for developer features
+        prefs_manager: Preferences manager instance
+        current_config (dict): Current configuration settings
+        current_workbook: Currently loaded Excel workbook
+        auth_manager: Authentication manager instance
+        current_user: Currently authenticated user
+        current_profile: Current user profile
+        logger: Structured logger instance
+        performance_monitor: Performance monitoring instance
+        theme_manager: Theme management instance
+        performance_indicator: Performance indicator widget
+    
+    Example:
+        Basic application usage:
+        
+            app = ProjectBudgetinator()
+            app.run()
+    
+    Note:
+        The application requires proper authentication and preferences setup.
+        All file operations are secured through centralized validation.
+    """
+    
     def __init__(self):
+        """Initialize the ProjectBudgetinator application.
+        
+        This constructor sets up the complete application environment including
+        authentication, preferences, GUI components, logging, and all necessary
+        subsystems. It follows a specific initialization order to ensure proper
+        dependency resolution.
+        
+        Initialization sequence:
+            1. Create main Tkinter window
+            2. Initialize logging and performance monitoring
+            3. Set up authentication system and user login
+            4. Initialize preferences manager with user profile
+            5. Set up theme system and window positioning
+            6. Create GUI menus and performance indicators
+            7. Show startup diagnostics
+        
+        Attributes initialized:
+            root (tk.Tk): Main Tkinter application window
+            developer_mode (bool): Flag for developer features (default: False)
+            prefs_manager: Preferences manager instance
+            current_config (dict): Current configuration settings
+            current_workbook: Currently loaded Excel workbook (initially None)
+            auth_manager: Authentication manager instance
+            current_user: Currently authenticated user object
+            current_profile: Current user profile object
+            logger: Structured logger instance for this class
+            performance_monitor: Performance monitoring instance
+            theme_manager: Theme management instance (if available)
+            performance_indicator: Performance indicator widget (if created)
+            _partner_sheets_cache: Cached partner sheets list for performance
+            _workbook_cache_key: Cache key to track workbook changes
+        
+        Raises:
+            SystemExit: If authentication fails or is cancelled, the application exits.
+            Exception: Various exceptions may be raised during initialization, but most
+                are handled gracefully with fallback behavior.
+        
+        Note:
+            If authentication fails, the application will log the failure and exit
+            gracefully. All subsystems are initialized with proper error handling
+            and fallback mechanisms to ensure the application can start even if
+            some features are unavailable.
+        """
         self.root = tk.Tk()
         self.developer_mode = False
         self.prefs_manager = None
         self.current_config = DEFAULT_USER_CONFIG.copy()
         self.current_workbook = None
+        self.auth_manager = None
+        self.current_user = None
+        self.current_profile = None
+        
+        # Performance optimization: Partner sheets caching
+        self._partner_sheets_cache = None
+        self._workbook_cache_key = None
         
         # Initialize structured logging system
         setup_logging()
@@ -79,10 +222,33 @@ class ProjectBudgetinator:
         # Initialize performance monitoring
         self.performance_monitor = get_performance_monitor()
         
+        # Initialize performance optimizer
+        self.performance_optimizer = get_performance_optimizer()
+        
+        # Initialize authentication system
+        self._initialize_authentication()
+        
+        # If authentication failed, exit
+        if not self.current_user:
+            self.logger.info("Authentication failed or cancelled, exiting application")
+            self.root.quit()
+            return
+        
+        # Initialize preferences manager with user profile
+        self._initialize_preferences()
+        
+        # Initialize theme system
+        self._initialize_theme_system()
+        
+        # Initialize window positioning
+        self._setup_window_positioning()
+        
         # Log application startup
-        self.logger.info("ProjectBudgetinator application starting", 
+        self.logger.info("ProjectBudgetinator application starting",
                         version=full_version_string(),
-                        developer_mode=self.developer_mode)
+                        developer_mode=self.developer_mode,
+                        user=self.current_user.username,
+                        profile=self.current_profile.profile_name if self.current_profile else "None")
         
         # Set up the menu bar
         self._setup_file_menu()
@@ -90,6 +256,89 @@ class ProjectBudgetinator:
         self._setup_performance_indicator()
         # Show diagnostics window at startup
         self.show_diagnostics()
+
+    def _initialize_authentication(self):
+        """Initialize the authentication system and show login dialog."""
+        try:
+            # Import authentication components
+            from auth.auth_manager import get_auth_manager
+            from gui.auth.login_dialog import show_login_dialog
+            
+            # Initialize authentication manager
+            self.auth_manager = get_auth_manager()
+            
+            # Show login dialog
+            self.logger.info("Showing login dialog")
+            result = show_login_dialog(self.root)
+            
+            if result:
+                self.current_user, self.current_profile = result
+                self.logger.info(f"User authenticated: {self.current_user.username}")
+                return True
+            else:
+                self.logger.info("User authentication cancelled or failed")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Authentication initialization failed: {e}")
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Authentication Error",
+                f"Failed to initialize authentication system:\n{str(e)}\n\nApplication will exit."
+            )
+            return False
+
+    def _initialize_preferences(self):
+        """Initialize preferences manager with user profile integration."""
+        try:
+            from core.preferences import PreferencesManager
+            
+            # Create preferences manager that integrates with user profiles
+            self.prefs_manager = PreferencesManager()
+            
+            # Load preferences from current user profile
+            if self.current_profile:
+                profile_preferences = self.current_profile.preferences_data or {}
+                self.current_config.update(profile_preferences)
+                self.logger.info(f"Loaded preferences from profile: {self.current_profile.profile_name}")
+            else:
+                self.logger.warning("No current profile, using default preferences")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to initialize preferences: {e}")
+            # Fall back to default preferences
+            from core.preferences import PreferencesManager
+            self.prefs_manager = PreferencesManager()
+
+    def _setup_window_positioning(self):
+        """Set up window positioning using preferences."""
+        try:
+            from utils.window_positioning import position_main_window
+            
+            # Position the main window according to preferences
+            position_main_window(self.root, self.prefs_manager)
+            
+            # Set up window close handler to save position
+            self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
+            
+            self.logger.info("Window positioning initialized successfully")
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize window positioning: {e}")
+            # Fallback to default positioning
+            self.root.geometry("800x600")
+
+    def _on_window_close(self):
+        """Handle main window close event to save position."""
+        try:
+            from utils.window_positioning import save_main_window_position
+            save_main_window_position(self.root)
+        except Exception as e:
+            self.logger.warning(f"Failed to save window position: {e}")
+        
+        # Continue with normal exit
+        self.exit_program()
+
     def _setup_file_menu(self):
         menubar = tk.Menu(self.root)
         # File menu
@@ -111,6 +360,26 @@ class ProjectBudgetinator:
         # Modify menu (partner and workpackage operations)
         modify_menu = self._create_modify_submenu(menubar)
         menubar.add_cascade(label="Modify", menu=modify_menu)
+
+        # User menu (for profile switching and user management)
+        user_menu = tk.Menu(menubar, tearoff=0)
+        
+        # Only show "Change Password" for non-admin users
+        if self.auth_manager and not self.auth_manager.is_current_user_admin():
+            user_menu.add_command(label="Change Password", command=self.change_password)
+            user_menu.add_separator()
+        # Add profile switcher to menu
+        try:
+            from gui.auth.profile_switcher import ProfileSwitcherMenu
+            self.profile_switcher_menu = ProfileSwitcherMenu(user_menu, self._on_profile_changed)
+        except Exception as e:
+            self.logger.warning(f"Failed to add profile switcher to menu: {e}")
+            user_menu.add_command(label="Switch Profile", command=self.show_profile_management, state="disabled")
+        
+        user_menu.add_separator()
+        user_menu.add_command(label="User Administration", command=self.show_user_administration)
+        user_menu.add_command(label="Logout", command=self.logout)
+        menubar.add_cascade(label="User", menu=user_menu)
 
         # Preferences menu
         pref_menu = tk.Menu(menubar, tearoff=0)
@@ -155,6 +424,11 @@ class ProjectBudgetinator:
         ]
         for label, command in workpackage_commands:
             modify_menu.add_command(label=label, command=command)
+        modify_menu.add_separator()
+        # Budget Overview operations
+        modify_menu.add_command(label="Update Budget Overview", command=self.update_budget_overview)
+        # PM Overview operations
+        modify_menu.add_command(label="Update PM Overview", command=self.update_pm_overview)
         return modify_menu
 
     # Partner and workpackage operations
@@ -163,53 +437,16 @@ class ProjectBudgetinator:
         with LogContext("add_partner", user_id="current_user"):
             self.logger.info("Starting add partner operation")
             
-            # Check if we have an open workbook
-            if self.current_workbook is None:
-                self.logger.warning("No workbook open, prompting user to open one")
-                response = messagebox.askyesno(
-                    "No Workbook Open",
-                    "No workbook is currently open. Would you like to open one now?"
-                )
-                if response:
-                    file_path = filedialog.askopenfilename(
-                        title="Open Excel Workbook",
-                        filetypes=EXCEL_FILETYPES
-                    )
-                    if file_path:
-                        try:
-                            # Validate file path and content
-                            is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
-                            if not is_valid:
-                                messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
-                                self.logger.warning("Security validation failed for file",
-                                                  file_path=file_path, error=error_msg)
-                                return
-                            
-                            # Sanitize file path
-                            safe_path = SecurityValidator.validate_file_path(file_path)
-                            
-                            from openpyxl import load_workbook
-                            self.current_workbook = load_workbook(safe_path)
-                            self.logger.info("Workbook loaded successfully",
-                                           file_path=safe_path)
-                        except ValueError as e:
-                            messagebox.showerror("Security Error", str(e))
-                            self.logger.warning("Security validation error", error=str(e))
-                            return
-                        except Exception as e:
-                            self.logger.error("Failed to load workbook",
-                                            file_path=file_path, error=str(e))
-                            messagebox.showerror(
-                                "Error",
-                                f"Could not open workbook:\n{str(e)}"
-                            )
-                            return
-                    else:
-                        self.logger.info("User cancelled workbook selection")
-                        return
-                else:
-                    self.logger.info("User declined to open workbook")
-                    return
+            # Use utility function to ensure workbook is loaded
+            success, workbook, error_message = ensure_workbook_loaded(
+                self.current_workbook, "add partner"
+            )
+            
+            if not success:
+                return
+            
+            # Update current workbook
+            self.current_workbook = workbook
 
         from handlers.add_partner_handler import (
             PartnerInputDialog,
@@ -238,57 +475,95 @@ class ProjectBudgetinator:
             partner_info['partner_acronym'] = partner_acronym
 
             if add_partner_to_workbook(self.current_workbook, partner_info):
+                # Invalidate partner sheets cache after adding new partner
+                self.invalidate_partner_sheets_cache()
+                
                 # Save the workbook
                 self._save_workbook(partner_number, partner_acronym)
     def _save_workbook(self, partner_number, partner_acronym):
         """Save the workbook with user confirmation."""
-        try:
-            save_path = filedialog.asksaveasfilename(
-                title="Save Workbook",
-                defaultextension=".xlsx",
-                filetypes=EXCEL_FILETYPES
-            )
-            if save_path:
-                self.current_workbook.save(save_path)
-                messagebox.showinfo(
-                    "Success",
-                    f"Added partner {partner_number}: {partner_acronym}\n"
-                    f"Workbook saved to: {save_path}"
-                )
-            else:
-                messagebox.showwarning(
-                    "Warning",
-                    "Partner added but workbook not saved!"
-                )
-        except Exception as e:
-            messagebox.showerror(
-                "Error",
-                f"Failed to save workbook:\n{str(e)}"
-            )
+        success_message = f"Added partner {partner_number}: {partner_acronym}"
+        success, file_path = save_workbook_with_dialog(
+            self.current_workbook,
+            title="Save Workbook",
+            success_message=success_message
+        )
+        return success, file_path
 
     def _is_partner_worksheet(self, sheet_name):
-        """Check if a sheet name represents a partner worksheet (P2 through P15)."""
-        if not sheet_name.startswith('P'):
-            return False
+        """Check if a sheet name represents a partner worksheet (P2 through P20) with hyphen format."""
+        return is_partner_worksheet(sheet_name)
+
+    @property
+    def partner_sheets(self):
+        """Get cached list of partner sheets with automatic cache invalidation.
         
-        # Extract the part after 'P'
-        rest = sheet_name[1:]
-        if not rest:
-            return False
+        This property provides a cached list of partner worksheet names to avoid
+        repeated calculations when accessing partner sheets multiple times. The cache
+        is automatically invalidated when the workbook changes.
         
-        # Get the number part (before any space or other characters)
-        parts = rest.split()
-        if not parts:
-            return False
+        Returns:
+            list: List of partner sheet names (e.g., ['P2-ACME', 'P3-BETA', ...])
+                 Returns empty list if no workbook is loaded or no partner sheets found.
         
-        number_part = parts[0]
+        Note:
+            The cache is based on the workbook's sheetnames list and is invalidated
+            whenever the workbook changes or when explicitly cleared.
+        """
+        # Use performance optimizer for caching
+        return self.performance_optimizer.get_cached_partner_sheets(
+            self.current_workbook,
+            self._is_partner_worksheet
+        )
+
+    def _get_workbook_cache_key(self):
+        """Generate a cache key based on current workbook state.
         
-        # Check if it's a valid number between 2 and 15
+        Returns:
+            str: Cache key representing current workbook state, or None if no workbook.
+        """
+        if self.current_workbook is None:
+            return None
+        
+        # Use tuple of sheet names as cache key - this will change if sheets are added/removed
         try:
-            partner_number = int(number_part)
-            return 2 <= partner_number <= 15
-        except ValueError:
-            return False
+            return tuple(sorted(self.current_workbook.sheetnames))
+        except Exception:
+            return None
+
+    def _build_partner_sheets_list(self):
+        """Build the list of partner sheets from current workbook.
+        
+        Returns:
+            list: List of partner sheet names, empty if no workbook or no partner sheets.
+        """
+        if self.current_workbook is None:
+            return []
+        
+        partner_sheets = []
+        try:
+            for sheet_name in self.current_workbook.sheetnames:
+                if self._is_partner_worksheet(sheet_name):
+                    partner_sheets.append(sheet_name)
+        except Exception as e:
+            self.logger.warning(f"Error building partner sheets list: {e}")
+            return []
+        
+        return partner_sheets
+
+    def invalidate_partner_sheets_cache(self):
+        """Manually invalidate the partner sheets cache.
+        
+        This method should be called after operations that modify the workbook
+        structure (adding/removing sheets) to ensure the cache stays current.
+        """
+        # Use performance optimizer for cache invalidation
+        self.performance_optimizer.invalidate_workbook_cache(self.current_workbook)
+        
+        # Also clear local cache variables for backward compatibility
+        self._partner_sheets_cache = None
+        self._workbook_cache_key = None
+        self.logger.debug("Partner sheets cache manually invalidated")
 
     def _update_partner_worksheet(self, worksheet, partner_info, cell_map):
         """Update partner worksheet with new values from the edit dialog."""
@@ -352,8 +627,23 @@ class ProjectBudgetinator:
                 )
                 if file_path:
                     try:
+                        # Validate file path and content
+                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                        if not is_valid:
+                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                            self.logger.warning("Security validation failed for file",
+                                              file_path=file_path, error=error_msg)
+                            return
+                        
+                        # Sanitize file path
+                        safe_path = SecurityValidator.validate_file_path(file_path)
+                        
                         from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(file_path)
+                        self.current_workbook = load_workbook(safe_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error", error=str(e))
+                        return
                     except Exception as e:
                         messagebox.showerror(
                             "Error",
@@ -365,11 +655,8 @@ class ProjectBudgetinator:
             else:
                 return
 
-        # Get list of partner sheets (P2 through P15)
-        partner_sheets = []
-        for sheet in self.current_workbook.sheetnames:
-            if self._is_partner_worksheet(sheet):
-                partner_sheets.append(sheet)
+        # Get list of partner sheets using cached property
+        partner_sheets = self.partner_sheets
 
         if not partner_sheets:
             messagebox.showinfo(
@@ -400,13 +687,72 @@ class ProjectBudgetinator:
             listbox.insert(tk.END, sheet)
 
         def on_delete():
-            # Placeholder - just close the dialog for now
+            """Delete the selected partner with proper validation and confirmation."""
             selection = listbox.curselection()
             if selection:
                 selected_sheet = partner_sheets[selection[0]]
-                # TODO: Implement actual deletion logic
-                self.logger.info(f"Would delete partner sheet: {selected_sheet}")
-                dialog.destroy()
+                
+                # Confirm deletion
+                if messagebox.askyesno(
+                    "Confirm Deletion",
+                    f"Are you sure you want to delete partner sheet '{selected_sheet}'?\n\n"
+                    "This action cannot be undone."
+                ):
+                    try:
+                        # Remove the worksheet
+                        if selected_sheet in self.current_workbook.sheetnames:
+                            del self.current_workbook[selected_sheet]
+                            
+                            # Invalidate partner sheets cache after deletion
+                            self.invalidate_partner_sheets_cache()
+                            
+                            # Ask user where to save the workbook
+                            save_path = filedialog.asksaveasfilename(
+                                title="Save Workbook After Partner Deletion",
+                                defaultextension=".xlsx",
+                                filetypes=EXCEL_FILETYPES
+                            )
+                            if save_path:
+                                try:
+                                    # Validate and sanitize save path
+                                    safe_save_path = SecurityValidator.validate_file_path(save_path)
+                                    
+                                    # Ensure proper extension
+                                    if not safe_save_path.lower().endswith('.xlsx'):
+                                        safe_save_path += '.xlsx'
+                                    
+                                    self.current_workbook.save(safe_save_path)
+                                    messagebox.showinfo(
+                                        "Success",
+                                        f"Partner sheet '{selected_sheet}' deleted successfully!\n"
+                                        f"Workbook saved to: {save_path}"
+                                    )
+                                    self.logger.info("Partner deleted and workbook saved",
+                                                   partner_sheet=selected_sheet,
+                                                   file_path=save_path)
+                                except ValueError as e:
+                                    messagebox.showerror("Security Error", str(e))
+                                    self.logger.warning("Security validation error for save path", error=str(e))
+                                    return
+                            else:
+                                messagebox.showwarning(
+                                    "Warning",
+                                    f"Partner sheet '{selected_sheet}' deleted but workbook not saved!"
+                                )
+                                self.logger.warning("Partner deleted but user did not save workbook")
+                            
+                            dialog.destroy()
+                        else:
+                            messagebox.showerror("Error", f"Partner sheet '{selected_sheet}' not found!")
+                            
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error",
+                            f"Failed to delete partner sheet:\n{str(e)}"
+                        )
+                        self.logger.error("Failed to delete partner sheet",
+                                        partner_sheet=selected_sheet,
+                                        error=str(e))
             else:
                 messagebox.showwarning(
                     "No Selection",
@@ -458,8 +804,23 @@ class ProjectBudgetinator:
                 )
                 if file_path:
                     try:
+                        # Validate file path and content
+                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                        if not is_valid:
+                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                            self.logger.warning("Security validation failed for file",
+                                              file_path=file_path, error=error_msg)
+                            return
+                        
+                        # Sanitize file path
+                        safe_path = SecurityValidator.validate_file_path(file_path)
+                        
                         from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(file_path)
+                        self.current_workbook = load_workbook(safe_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error", error=str(e))
+                        return
                     except Exception as e:
                         messagebox.showerror(
                             "Error",
@@ -471,11 +832,8 @@ class ProjectBudgetinator:
             else:
                 return
 
-        # Get list of partner sheets (P2 through P15)
-        partner_sheets = []
-        for sheet in self.current_workbook.sheetnames:
-            if self._is_partner_worksheet(sheet):
-                partner_sheets.append(sheet)
+        # Get list of partner sheets using cached property
+        partner_sheets = self.partner_sheets
 
         if not partner_sheets:
             messagebox.showinfo(
@@ -510,10 +868,10 @@ class ProjectBudgetinator:
             if selection:
                 selected_sheet = partner_sheets[selection[0]]
                 dialog.destroy()
-                # Extract partner number and acronym from the sheet name
-                parts = selected_sheet[1:].split()
+                # Extract partner number and acronym from the sheet name (hyphen format)
+                parts = selected_sheet[1:].split('-', 1)
                 partner_number = parts[0] if parts else ''
-                partner_acronym = ' '.join(parts[1:]) if len(parts) > 1 else ''
+                partner_acronym = parts[1] if len(parts) > 1 else ''
 
                 ws = self.current_workbook[selected_sheet]
                 # Create debug window first
@@ -638,7 +996,19 @@ class ProjectBudgetinator:
                             filetypes=EXCEL_FILETYPES
                         )
                         if save_path:
-                            self.current_workbook.save(save_path)
+                            try:
+                                # Validate and sanitize save path
+                                safe_save_path = SecurityValidator.validate_file_path(save_path)
+                                
+                                # Ensure proper extension
+                                if not safe_save_path.lower().endswith('.xlsx'):
+                                    safe_save_path += '.xlsx'
+                                
+                                self.current_workbook.save(safe_save_path)
+                            except ValueError as e:
+                                messagebox.showerror("Security Error", str(e))
+                                self.logger.warning("Security validation error for save path", error=str(e))
+                                return
                             messagebox.showinfo(
                                 "Success",
                                 f"Partner {partner_number} ({partner_acronym}) updated and saved to:\n{save_path}"
@@ -798,8 +1168,23 @@ class ProjectBudgetinator:
                 )
                 if file_path:
                     try:
+                        # Validate file path and content
+                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                        if not is_valid:
+                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                            self.logger.warning("Security validation failed for file",
+                                              file_path=file_path, error=error_msg)
+                            return
+                        
+                        # Sanitize file path
+                        safe_path = SecurityValidator.validate_file_path(file_path)
+                        
                         from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(file_path)
+                        self.current_workbook = load_workbook(safe_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error", error=str(e))
+                        return
                     except Exception as e:
                         messagebox.showerror(
                             "Error",
@@ -835,7 +1220,19 @@ class ProjectBudgetinator:
                     filetypes=EXCEL_FILETYPES
                 )
                 if save_path:
-                    self.current_workbook.save(save_path)
+                    try:
+                        # Validate and sanitize save path
+                        safe_save_path = SecurityValidator.validate_file_path(save_path)
+                        
+                        # Ensure proper extension
+                        if not safe_save_path.lower().endswith('.xlsx'):
+                            safe_save_path += '.xlsx'
+                        
+                        self.current_workbook.save(safe_save_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error for save path", error=str(e))
+                        return
                     messagebox.showinfo(
                         "Success",
                         f"Added workpackage in row {dialog.result['row']}\n"
@@ -854,8 +1251,85 @@ class ProjectBudgetinator:
 
     def delete_workpackage(self):
         """Delete a workpackage from the project."""
-        # TODO: Implement workpackage deletion functionality
-        not_implemented_yet("Delete Workpackage")
+        # Check if we have an open workbook
+        if self.current_workbook is None:
+            response = messagebox.askyesno(
+                "No Workbook Open",
+                "No workbook is currently open. Would you like to open one now?"
+            )
+            if response:
+                file_path = filedialog.askopenfilename(
+                    title="Open Excel Workbook",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if file_path:
+                    try:
+                        # Use centralized file operations
+                        from utils.centralized_file_operations import safe_open_workbook
+                        success, workbook, error_msg = safe_open_workbook(file_path)
+                        if success:
+                            self.current_workbook = workbook
+                        else:
+                            messagebox.showerror("Error", f"Could not open workbook: {error_msg}")
+                            return
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Could not open workbook:\n{str(e)}")
+                        return
+                else:
+                    return
+            else:
+                return
+        
+        # Check if PM Summary sheet exists
+        if "PM Summary" not in self.current_workbook.sheetnames:
+            messagebox.showerror(
+                "Error",
+                "This workbook does not contain a 'PM Summary' sheet"
+            )
+            return
+        
+        # Show the DeleteWorkpackageDialog
+        try:
+            from handlers.edit_workpackage_handler import DeleteWorkpackageDialog
+            dialog = DeleteWorkpackageDialog(self.root, self.current_workbook)
+            
+            # Wait for dialog
+            self.root.wait_window(dialog.dialog)
+            
+            if dialog.result:
+                # Ask user where to save the workbook
+                save_path = filedialog.asksaveasfilename(
+                    title="Save Workbook After Workpackage Deletion",
+                    defaultextension=".xlsx",
+                    filetypes=EXCEL_FILETYPES
+                )
+                if save_path:
+                    try:
+                        # Use centralized file operations
+                        from utils.centralized_file_operations import safe_save_workbook
+                        success, saved_path, error_msg = safe_save_workbook(self.current_workbook, save_path)
+                        if success:
+                            messagebox.showinfo(
+                                "Success",
+                                f"Deleted workpackage from row {dialog.result['row']}\n"
+                                f"Workbook saved to: {saved_path}"
+                            )
+                        else:
+                            messagebox.showerror("Error", f"Failed to save workbook: {error_msg}")
+                    except Exception as e:
+                        messagebox.showerror("Error", f"Failed to save workbook:\n{str(e)}")
+                else:
+                    messagebox.showwarning(
+                        "Warning",
+                        "Workpackage deleted but workbook not saved!"
+                    )
+        except ImportError:
+            # Fallback implementation
+            messagebox.showinfo(
+                "Delete Workpackage",
+                "Workpackage deletion functionality is not yet fully implemented.\n"
+                "Please use the Edit Workpackage function to modify workpackage data."
+            )
 
     def edit_workpackage(self):
         """Open a dialog to edit a workpackage."""
@@ -872,8 +1346,23 @@ class ProjectBudgetinator:
                 )
                 if file_path:
                     try:
+                        # Validate file path and content
+                        is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                        if not is_valid:
+                            messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                            self.logger.warning("Security validation failed for file",
+                                              file_path=file_path, error=error_msg)
+                            return
+                        
+                        # Sanitize file path
+                        safe_path = SecurityValidator.validate_file_path(file_path)
+                        
                         from openpyxl import load_workbook
-                        self.current_workbook = load_workbook(file_path)
+                        self.current_workbook = load_workbook(safe_path)
+                    except ValueError as e:
+                        messagebox.showerror("Security Error", str(e))
+                        self.logger.warning("Security validation error", error=str(e))
+                        return
                     except Exception as e:
                         messagebox.showerror(
                             "Error",
@@ -924,6 +1413,282 @@ class ProjectBudgetinator:
                 messagebox.showerror(
                     "Error",
                     f"Failed to save workbook:\n{str(e)}"
+                )
+
+    def update_budget_overview(self):
+        """Manually update Budget Overview worksheet from menu."""
+        with LogContext("manual_update_budget_overview", user_id="current_user"):
+            self.logger.info("Starting manual Budget Overview update")
+            
+            # Check if we have an open workbook
+            if self.current_workbook is None:
+                self.logger.warning("No workbook open, prompting user to open one")
+                response = messagebox.askyesno(
+                    "No Workbook Open",
+                    "No workbook is currently open. Would you like to open one now?"
+                )
+                if response:
+                    file_path = filedialog.askopenfilename(
+                        title="Open Excel Workbook",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if file_path:
+                        try:
+                            # Validate file path and content
+                            is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                            if not is_valid:
+                                messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                                self.logger.warning("Security validation failed for file",
+                                                  file_path=file_path, error=error_msg)
+                                return
+                            
+                            # Sanitize file path
+                            safe_path = SecurityValidator.validate_file_path(file_path)
+                            
+                            from openpyxl import load_workbook
+                            self.current_workbook = load_workbook(safe_path)
+                            self.logger.info("Workbook loaded successfully for Budget Overview update",
+                                           file_path=safe_path)
+                        except ValueError as e:
+                            messagebox.showerror("Security Error", str(e))
+                            self.logger.warning("Security validation error", error=str(e))
+                            return
+                        except Exception as e:
+                            self.logger.error("Failed to load workbook for Budget Overview update",
+                                            file_path=file_path, error=str(e))
+                            messagebox.showerror(
+                                "Error",
+                                f"Could not open workbook:\n{str(e)}"
+                            )
+                            return
+                    else:
+                        self.logger.info("User cancelled workbook selection")
+                        return
+                else:
+                    self.logger.info("User declined to open workbook")
+                    return
+
+            # Perform the Budget Overview update
+            try:
+                from handlers.update_budget_overview_handler_formula import update_budget_overview_with_progress
+                
+                success = update_budget_overview_with_progress(self.root, self.current_workbook)
+                
+                if success:
+                    # Apply conditional formatting after successful formula updates
+                    try:
+                        from handlers.budget_overview_format import apply_budget_overview_formatting
+                        formatting_success = apply_budget_overview_formatting(self.root, self.current_workbook)
+                        
+                        if formatting_success:
+                            success_msg = (
+                                "✅ Budget Overview updated successfully!\n"
+                                "🎨 Conditional formatting applied based on row completion.\n\n"
+                                "Ready to save the updated workbook."
+                            )
+                        else:
+                            success_msg = (
+                                "✅ Budget Overview updated successfully!\n"
+                                "⚠️ Formatting could not be applied (see debug window for details).\n\n"
+                                "Ready to save the updated workbook."
+                            )
+                    except ImportError as import_err:
+                        success_msg = (
+                            "✅ Budget Overview updated successfully!\n"
+                            f"⚠️ Formatting module not available: {str(import_err)}\n\n"
+                            "Ready to save the updated workbook."
+                        )
+                        self.logger.warning("Formatting module not available during manual update", error=str(import_err))
+                    except Exception as format_err:
+                        success_msg = (
+                            "✅ Budget Overview updated successfully!\n"
+                            f"⚠️ Formatting failed: {str(format_err)}\n\n"
+                            "Ready to save the updated workbook."
+                        )
+                        self.logger.warning("Formatting failed during manual update", error=str(format_err))
+                    
+                    # Ask user where to save the workbook
+                    save_path = filedialog.asksaveasfilename(
+                        title="Save Updated Workbook",
+                        defaultextension=".xlsx",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if save_path:
+                        try:
+                            # Validate and sanitize save path
+                            safe_save_path = SecurityValidator.validate_file_path(save_path)
+                            
+                            # Ensure proper extension
+                            if not safe_save_path.lower().endswith('.xlsx'):
+                                safe_save_path += '.xlsx'
+                            
+                            self.current_workbook.save(safe_save_path)
+                        except ValueError as e:
+                            messagebox.showerror("Security Error", str(e))
+                            self.logger.warning("Security validation error for save path", error=str(e))
+                            return
+                        messagebox.showinfo(
+                            "Success",
+                            f"{success_msg}\n\nWorkbook saved to: {save_path}"
+                        )
+                        self.logger.info("Budget Overview update completed and workbook saved",
+                                        file_path=save_path)
+                    else:
+                        messagebox.showwarning(
+                            "Warning",
+                            "Budget Overview updated but workbook not saved!"
+                        )
+                        self.logger.warning("Budget Overview updated but user did not save workbook")
+                else:
+                    messagebox.showerror(
+                        "Error",
+                        "Failed to update Budget Overview. Please check the logs for details."
+                    )
+                    self.logger.error("Budget Overview update failed")
+                    
+            except Exception as e:
+                self.logger.exception("Exception during manual Budget Overview update")
+                messagebox.showerror(
+                    "Error",
+                    f"An error occurred while updating Budget Overview:\n{str(e)}"
+                )
+
+    def update_pm_overview(self):
+        """Manually update PM Overview worksheet from menu."""
+        with LogContext("manual_update_pm_overview", user_id="current_user"):
+            self.logger.info("Starting manual PM Overview update")
+            
+            # Check if we have an open workbook
+            if self.current_workbook is None:
+                self.logger.warning("No workbook open, prompting user to open one")
+                response = messagebox.askyesno(
+                    "No Workbook Open",
+                    "No workbook is currently open. Would you like to open one now?"
+                )
+                if response:
+                    file_path = filedialog.askopenfilename(
+                        title="Open Excel Workbook",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if file_path:
+                        try:
+                            # Validate file path and content
+                            is_valid, error_msg = SecurityValidator.validate_excel_file(file_path)
+                            if not is_valid:
+                                messagebox.showerror("Security Error", f"Cannot open file: {error_msg}")
+                                self.logger.warning("Security validation failed for file",
+                                                  file_path=file_path, error=error_msg)
+                                return
+                            
+                            # Sanitize file path
+                            safe_path = SecurityValidator.validate_file_path(file_path)
+                            
+                            from openpyxl import load_workbook
+                            self.current_workbook = load_workbook(safe_path)
+                            self.logger.info("Workbook loaded successfully for PM Overview update",
+                                           file_path=safe_path)
+                        except ValueError as e:
+                            messagebox.showerror("Security Error", str(e))
+                            self.logger.warning("Security validation error", error=str(e))
+                            return
+                        except Exception as e:
+                            self.logger.error("Failed to load workbook for PM Overview update",
+                                            file_path=file_path, error=str(e))
+                            messagebox.showerror(
+                                "Error",
+                                f"Could not open workbook:\n{str(e)}"
+                            )
+                            return
+                    else:
+                        self.logger.info("User cancelled workbook selection")
+                        return
+                else:
+                    self.logger.info("User declined to open workbook")
+                    return
+
+            # Perform the PM Overview update
+            try:
+                from handlers.update_pm_overview_handler import update_pm_overview_with_progress
+                
+                success = update_pm_overview_with_progress(self.root, self.current_workbook)
+                
+                if success:
+                    # Apply conditional formatting after successful formula updates
+                    try:
+                        from handlers.pm_overview_format import apply_pm_overview_formatting
+                        formatting_success = apply_pm_overview_formatting(self.root, self.current_workbook)
+                        
+                        if formatting_success:
+                            success_msg = (
+                                "✅ PM Overview updated successfully!\n"
+                                "🎨 Conditional formatting applied based on row completion.\n\n"
+                                "Ready to save the updated workbook."
+                            )
+                        else:
+                            success_msg = (
+                                "✅ PM Overview updated successfully!\n"
+                                "⚠️ Formatting could not be applied (see debug window for details).\n\n"
+                                "Ready to save the updated workbook."
+                            )
+                    except ImportError as import_err:
+                        success_msg = (
+                            "✅ PM Overview updated successfully!\n"
+                            f"⚠️ Formatting module not available: {str(import_err)}\n\n"
+                            "Ready to save the updated workbook."
+                        )
+                        self.logger.warning("Formatting module not available during manual PM update", error=str(import_err))
+                    except Exception as format_err:
+                        success_msg = (
+                            "✅ PM Overview updated successfully!\n"
+                            f"⚠️ Formatting failed: {str(format_err)}\n\n"
+                            "Ready to save the updated workbook."
+                        )
+                        self.logger.warning("Formatting failed during manual PM update", error=str(format_err))
+                    
+                    # Ask user where to save the workbook
+                    save_path = filedialog.asksaveasfilename(
+                        title="Save Updated Workbook",
+                        defaultextension=".xlsx",
+                        filetypes=EXCEL_FILETYPES
+                    )
+                    if save_path:
+                        try:
+                            # Validate and sanitize save path
+                            safe_save_path = SecurityValidator.validate_file_path(save_path)
+                            
+                            # Ensure proper extension
+                            if not safe_save_path.lower().endswith('.xlsx'):
+                                safe_save_path += '.xlsx'
+                            
+                            self.current_workbook.save(safe_save_path)
+                        except ValueError as e:
+                            messagebox.showerror("Security Error", str(e))
+                            self.logger.warning("Security validation error for save path", error=str(e))
+                            return
+                        messagebox.showinfo(
+                            "Success",
+                            f"{success_msg}\n\nWorkbook saved to: {save_path}"
+                        )
+                        self.logger.info("PM Overview update completed and workbook saved",
+                                        file_path=save_path)
+                    else:
+                        messagebox.showwarning(
+                            "Warning",
+                            "PM Overview updated but workbook not saved!"
+                        )
+                        self.logger.warning("PM Overview updated but user did not save workbook")
+                else:
+                    messagebox.showerror(
+                        "Error",
+                        "Failed to update PM Overview. Please check the logs for details."
+                    )
+                    self.logger.error("PM Overview update failed")
+                    
+            except Exception as e:
+                self.logger.exception("Exception during manual PM Overview update")
+                messagebox.showerror(
+                    "Error",
+                    f"An error occurred while updating PM Overview:\n{str(e)}"
                 )
 
     def _setup_preferences_menu(self, menubar):
@@ -1559,13 +2324,49 @@ class ProjectBudgetinator:
             self.current_config = self.prefs_manager.load_config()
             self.apply_theme()
 
+    def _initialize_theme_system(self):
+        """Initialize the theme management system."""
+        try:
+            from gui.theme_manager import ThemeManager
+            self.theme_manager = ThemeManager()
+            
+            # Apply the current theme from preferences
+            current_theme = self.current_config.get('theme', 'light')
+            self.theme_manager.apply_theme(self.root, current_theme)
+            
+        except Exception as e:
+            self.logger.warning(f"Could not initialize theme system: {e}")
+            # Fallback to basic theme
+            self.theme_manager = None
+            theme = self.current_config.get('theme', 'light')
+            if theme == 'dark':
+                self.root.configure(bg='#2b2b2b')
+            else:
+                self.root.configure(bg='#f0f0f0')
+
     def apply_theme(self):
-        """Apply the selected theme (light or dark) to the main window."""
-        # This is a placeholder for theme implementation
-        # In real impl., apply colors and styles for each theme
-        theme = self.current_config.get("theme", "light")
-        bg_color = "gray20" if theme == "dark" else "SystemButtonFace"
-        self.root.configure(bg=bg_color)
+        """Apply the selected theme (light or dark) to the entire application."""
+        try:
+            # Get current theme from preferences
+            theme = self.current_config.get("theme", "light")
+            self.logger.info(f"Applying theme: {theme}")
+            
+            # Use theme manager if available
+            if hasattr(self, 'theme_manager') and self.theme_manager:
+                self.theme_manager.apply_theme(self.root, theme)
+                self.logger.info(f"Theme '{theme}' applied successfully using ThemeManager")
+            else:
+                # Fallback to function-based theme application
+                from gui.theme_manager import apply_theme_to_app
+                apply_theme_to_app(self.root, theme)
+                self.logger.info(f"Theme '{theme}' applied successfully using fallback method")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to apply theme: {e}")
+            # Fallback to basic theme
+            theme = self.current_config.get("theme", "light")
+            bg_color = "#2d2d30" if theme == "dark" else "#f0f0f0"
+            self.root.configure(bg=bg_color)
 
     def _setup_performance_indicator(self):
         """Set up the performance indicator in the status bar."""
@@ -1590,6 +2391,7 @@ class ProjectBudgetinator:
             self.logger.error(f"Performance monitor error: {e}")
 
     @monitor_performance(include_memory=True, log_level='DEBUG')
+    @monitor_operation("workbook_loading")
     def load_workbook(self, file_path: str):
         """Load Excel workbook with performance monitoring."""
         try:
@@ -1650,9 +2452,139 @@ class ProjectBudgetinator:
             messagebox.showerror("Error",
                                  "Failed to open batch operations dialog.")
 
+    def _on_profile_changed(self, profile):
+        """Handle profile change event."""
+        try:
+            self.current_profile = profile
+            self.logger.info(f"Profile changed to: {profile.profile_name}")
+            
+            # Update current config with new profile preferences
+            if profile.preferences_data:
+                self.current_config.update(profile.preferences_data)
+                self.apply_theme()  # Apply any theme changes
+                
+            # Show notification
+            messagebox.showinfo(
+                "Profile Changed",
+                f"Switched to profile: {profile.profile_name}\n"
+                f"Environment: {profile.environment_type}"
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error handling profile change: {e}")
+            messagebox.showerror("Error", f"Failed to switch profile: {str(e)}")
+
+    def change_password(self):
+        """Show change password dialog."""
+        try:
+            # Check if current user is admin
+            if self.auth_manager and self.auth_manager.is_current_user_admin():
+                messagebox.showinfo(
+                    "Admin Password Protected",
+                    "The admin user password cannot be changed.\n\n"
+                    "The admin password is permanently set to 'pbi' for security reasons."
+                )
+                return
+            
+            from gui.auth.password_change_dialog import show_password_change_dialog
+            
+            def change_password_callback(old_password: str, new_password: str) -> bool:
+                return self.auth_manager.change_password(old_password, new_password)
+            
+            show_password_change_dialog(self.root, self.current_user.username, change_password_callback)
+        except ImportError:
+            # Simple password change dialog
+            from tkinter import simpledialog
+            
+            # Check if current user is admin
+            if self.current_user and self.current_user.username.lower() == "admin":
+                messagebox.showinfo(
+                    "Admin Password Protected",
+                    "The admin user password cannot be changed.\n\n"
+                    "The admin password is permanently set to 'pbi' for security reasons."
+                )
+                return
+            
+            old_password = simpledialog.askstring("Change Password", "Enter current password:", show='*')
+            if old_password:
+                new_password = simpledialog.askstring("Change Password", "Enter new password:", show='*')
+                if new_password:
+                    confirm_password = simpledialog.askstring("Change Password", "Confirm new password:", show='*')
+                    if new_password == confirm_password:
+                        if self.auth_manager.change_password(old_password, new_password):
+                            messagebox.showinfo("Success", "Password changed successfully!")
+                        else:
+                            messagebox.showerror("Error", "Failed to change password. Please check your current password.")
+                    else:
+                        messagebox.showerror("Error", "Passwords do not match!")
+        except Exception as e:
+            self.logger.error(f"Error changing password: {e}")
+            messagebox.showerror("Error", f"Failed to change password: {str(e)}")
+
+    def show_profile_management(self):
+        """Show profile management dialog."""
+        try:
+            from gui.auth.profile_dialog import show_profile_management_dialog
+            show_profile_management_dialog(self.root, self.auth_manager.profile_manager,
+                                          self.current_user.user_id)
+            if hasattr(self, 'profile_switcher_menu'):
+                self.profile_switcher_menu.refresh()
+        except ImportError:
+            messagebox.showinfo("Profile Management", "Profile management feature is not yet available.")
+        except Exception as e:
+            self.logger.error(f"Error opening profile management: {e}")
+            messagebox.showerror("Error", f"Failed to open profile management: {str(e)}")
+
+    def show_user_administration(self):
+        """Show user administration dialog."""
+        try:
+            from gui.auth.user_admin_dialog import show_user_admin_dialog
+            show_user_admin_dialog(self.root, self.auth_manager)
+        except ImportError:
+            messagebox.showinfo("User Administration", "User administration feature is not yet available.")
+        except Exception as e:
+            self.logger.error(f"Error opening user administration: {e}")
+            messagebox.showerror("Error", f"Failed to open user administration: {str(e)}")
+
+    def logout(self):
+        """Logout current user and restart application."""
+        try:
+            if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
+                # Save any current preferences to profile
+                if self.auth_manager and self.current_profile:
+                    self.auth_manager.update_preferences(self.current_config)
+                
+                # Logout
+                if self.auth_manager:
+                    self.auth_manager.logout()
+                
+                self.logger.info("User logged out, restarting application")
+                
+                # Restart the application
+                self.root.quit()
+                # Note: In a real implementation, you might want to restart the entire application
+                # For now, we'll just quit and let the user restart manually
+                
+        except Exception as e:
+            self.logger.error(f"Error during logout: {e}")
+            messagebox.showerror("Error", f"Failed to logout: {str(e)}")
+
     def exit_program(self):
         """Prompt the user to confirm exit and quit the application."""
-        if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
+        try:
+            # Save current preferences to profile before exiting
+            if self.auth_manager and self.current_profile:
+                self.auth_manager.update_preferences(self.current_config)
+            
+            if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
+                # Logout user
+                if self.auth_manager:
+                    self.auth_manager.logout()
+                self.root.quit()
+                
+        except Exception as e:
+            self.logger.error(f"Error during exit: {e}")
+            # Still allow exit even if there's an error
             self.root.quit()
 
     def run(self):

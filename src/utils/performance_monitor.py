@@ -62,12 +62,35 @@ class FileOperationMetric:
     error_message: Optional[str] = None
 
 
-class MetricsCollector:
-    """Centralized metrics collection and storage"""
+@dataclass
+class CacheMetric:
+    """Data class for cache operation metrics"""
+    operation_type: str  # get, set, delete, evict
+    cache_key: str
+    hit: bool
+    duration: float
+    data_size: int
+    timestamp: datetime
+    cache_level: str = "memory"  # memory, disk, miss
+
+
+@dataclass
+class PerformanceBenchmark:
+    """Data class for performance benchmarks"""
+    operation_name: str
+    baseline_duration: float
+    current_duration: float
+    improvement_percent: float
+    sample_size: int
+    timestamp: datetime
+
+
+class EnhancedMetricsCollector:
+    """Enhanced metrics collection with caching and performance optimization tracking"""
     
     def __init__(self, max_metrics: int = 10000):
         """
-        Initialize metrics collector.
+        Initialize enhanced metrics collector.
         
         Args:
             max_metrics: Maximum number of metrics to keep in memory
@@ -76,8 +99,10 @@ class MetricsCollector:
         self.performance_metrics: deque = deque(maxlen=max_metrics)
         self.system_metrics: deque = deque(maxlen=max_metrics)
         self.file_metrics: deque = deque(maxlen=max_metrics)
+        self.cache_metrics: deque = deque(maxlen=max_metrics)
+        self.benchmarks: deque = deque(maxlen=1000)
         
-        # Statistics
+        # Enhanced statistics
         self.function_stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
             'count': 0,
             'total_duration': 0.0,
@@ -87,7 +112,10 @@ class MetricsCollector:
             'total_memory_delta': 0,
             'avg_memory_delta': 0.0,
             'error_count': 0,
-            'success_rate': 100.0
+            'success_rate': 100.0,
+            'cache_hit_rate': 0.0,
+            'performance_trend': 'stable',
+            'optimization_score': 100.0
         })
         
         self.file_stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
@@ -96,11 +124,70 @@ class MetricsCollector:
             'avg_duration': 0.0,
             'total_size': 0,
             'error_count': 0,
-            'success_rate': 100.0
+            'success_rate': 100.0,
+            'throughput_mbps': 0.0,
+            'avg_file_size': 0.0
         })
+        
+        self.cache_stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
+            'hits': 0,
+            'misses': 0,
+            'hit_rate': 0.0,
+            'avg_access_time': 0.0,
+            'total_data_size': 0,
+            'evictions': 0
+        })
+        
+        # Performance optimization tracking
+        self.optimization_history: Dict[str, List[float]] = defaultdict(list)
+        self.performance_baselines: Dict[str, float] = {}
         
         self._lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
+    
+    def add_cache_metric(self, metric: CacheMetric):
+        """Add a cache operation metric"""
+        with self._lock:
+            self.cache_metrics.append(metric)
+            self._update_cache_stats(metric)
+    
+    def add_benchmark(self, benchmark: PerformanceBenchmark):
+        """Add a performance benchmark"""
+        with self._lock:
+            self.benchmarks.append(benchmark)
+            self._update_optimization_history(benchmark)
+    
+    def _update_cache_stats(self, metric: CacheMetric):
+        """Update cache statistics"""
+        stats = self.cache_stats[metric.cache_key]
+        
+        if metric.hit:
+            stats['hits'] += 1
+        else:
+            stats['misses'] += 1
+        
+        total_ops = stats['hits'] + stats['misses']
+        stats['hit_rate'] = (stats['hits'] / total_ops) * 100 if total_ops > 0 else 0
+        
+        # Update average access time
+        if 'access_times' not in stats:
+            stats['access_times'] = []
+        stats['access_times'].append(metric.duration)
+        if len(stats['access_times']) > 100:
+            stats['access_times'] = stats['access_times'][-50:]
+        
+        stats['avg_access_time'] = sum(stats['access_times']) / len(stats['access_times'])
+        stats['total_data_size'] += metric.data_size
+    
+    def _update_optimization_history(self, benchmark: PerformanceBenchmark):
+        """Update optimization history"""
+        self.optimization_history[benchmark.operation_name].append(benchmark.improvement_percent)
+        if len(self.optimization_history[benchmark.operation_name]) > 100:
+            self.optimization_history[benchmark.operation_name] = self.optimization_history[benchmark.operation_name][-50:]
+        
+        # Update baseline if this is a significant improvement
+        if benchmark.improvement_percent > 10:  # 10% improvement threshold
+            self.performance_baselines[benchmark.operation_name] = benchmark.current_duration
     
     def add_performance_metric(self, metric: PerformanceMetric):
         """Add a performance metric"""
@@ -241,7 +328,7 @@ class PerformanceMonitor:
         if self._initialized:
             return
         
-        self.collector = MetricsCollector()
+        self.collector = EnhancedMetricsCollector()
         self.process = psutil.Process()
         self.logger = logging.getLogger(__name__)
         self._monitoring_active = True
@@ -679,7 +766,7 @@ class PerformanceAnalyzer:
         return suggestions
 
 
-def create_performance_report(output_file: str = None) -> str:
+def create_performance_report(output_file: Optional[str] = None) -> str:
     """Create a comprehensive performance report"""
     monitor = get_performance_monitor()
     

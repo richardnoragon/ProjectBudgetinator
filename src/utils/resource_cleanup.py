@@ -13,6 +13,7 @@ import gc
 import atexit
 import weakref
 import threading
+import time
 from typing import Dict, List, Any, Optional, Iterator
 from contextlib import contextmanager
 import logging
@@ -150,15 +151,18 @@ cleanup_manager = ResourceCleanupManager()
 
 class ExcelResourceTracker:
     """
-    Track and manage Excel resources with automatic cleanup.
+    Enhanced Excel resource tracker with streaming and chunked processing support.
     """
     
     def __init__(self):
         self._workbooks = {}
         self._temp_files = set()
+        self._streaming_operations = {}
+        self._memory_usage_history = []
+        self._lock = threading.Lock()
     
     def track_workbook(self, file_path: str, workbook):
-        """Track an Excel workbook for cleanup."""
+        """Track an Excel workbook for cleanup with enhanced metadata."""
         def cleanup_func(wb):
             try:
                 wb.close()
@@ -166,37 +170,149 @@ class ExcelResourceTracker:
             except Exception as e:
                 logger.error(f"Error closing workbook {file_path}: {e}")
         
-        cleanup_manager.register_resource(f"workbook_{file_path}", workbook, cleanup_func)
-        self._workbooks[file_path] = workbook
+        with self._lock:
+            cleanup_manager.register_resource(f"workbook_{file_path}", workbook, cleanup_func)
+            self._workbooks[file_path] = {
+                'workbook': workbook,
+                'opened_at': time.time(),
+                'memory_at_open': self._get_current_memory()
+            }
     
     def untrack_workbook(self, file_path: str):
         """Untrack an Excel workbook."""
-        cleanup_manager.unregister_resource(f"workbook_{file_path}")
-        if file_path in self._workbooks:
-            del self._workbooks[file_path]
+        with self._lock:
+            cleanup_manager.unregister_resource(f"workbook_{file_path}")
+            if file_path in self._workbooks:
+                workbook_info = self._workbooks.pop(file_path)
+                # Record memory usage history
+                self._record_memory_usage(file_path, workbook_info)
     
     def track_temp_file(self, file_path: str):
         """Track a temporary file for cleanup."""
-        self._temp_files.add(file_path)
+        with self._lock:
+            self._temp_files.add(file_path)
     
     def cleanup_temp_files(self):
         """Cleanup tracked temporary files."""
-        for file_path in list(self._temp_files):
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logger.debug(f"Removed temp file: {file_path}")
-                self._temp_files.discard(file_path)
-            except Exception as e:
-                logger.error(f"Error removing temp file {file_path}: {e}")
+        with self._lock:
+            for file_path in list(self._temp_files):
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        logger.debug(f"Removed temp file: {file_path}")
+                    self._temp_files.discard(file_path)
+                except Exception as e:
+                    logger.error(f"Error removing temp file {file_path}: {e}")
+    
+    def start_streaming_operation(self, operation_id: str, file_path: str, chunk_size: int = 1000):
+        """Start tracking a streaming operation for large Excel files."""
+        with self._lock:
+            self._streaming_operations[operation_id] = {
+                'file_path': file_path,
+                'chunk_size': chunk_size,
+                'started_at': time.time(),
+                'processed_chunks': 0,
+                'memory_snapshots': []
+            }
+            logger.info(f"Started streaming operation {operation_id} for {file_path}")
+    
+    def update_streaming_progress(self, operation_id: str, chunks_processed: int):
+        """Update progress of a streaming operation."""
+        with self._lock:
+            if operation_id in self._streaming_operations:
+                op = self._streaming_operations[operation_id]
+                op['processed_chunks'] = chunks_processed
+                
+                # Take memory snapshot every 10 chunks
+                if chunks_processed % 10 == 0:
+                    memory_mb = self._get_current_memory()
+                    op['memory_snapshots'].append({
+                        'chunk': chunks_processed,
+                        'memory_mb': memory_mb,
+                        'timestamp': time.time()
+                    })
+                    
+                    # Check for memory growth
+                    if len(op['memory_snapshots']) > 1:
+                        prev_memory = op['memory_snapshots'][-2]['memory_mb']
+                        if memory_mb > prev_memory * 1.2:  # 20% increase
+                            logger.warning(f"Memory growth detected in streaming operation {operation_id}: "
+                                           f"{prev_memory:.1f}MB -> {memory_mb:.1f}MB")
+    
+    def finish_streaming_operation(self, operation_id: str):
+        """Finish and cleanup a streaming operation."""
+        with self._lock:
+            if operation_id in self._streaming_operations:
+                op = self._streaming_operations.pop(operation_id)
+                duration = time.time() - op['started_at']
+                logger.info(f"Completed streaming operation {operation_id}: "
+                            f"{op['processed_chunks']} chunks in {duration:.2f}s")
+                
+                # Force cleanup after streaming operation
+                gc.collect()
+    
+    def _get_current_memory(self) -> float:
+        """Get current memory usage in MB."""
+        try:
+            import psutil
+            return psutil.Process().memory_info().rss / (1024 * 1024)
+        except Exception:
+            return 0.0
+    
+    def _record_memory_usage(self, file_path: str, workbook_info: Dict[str, Any]):
+        """Record memory usage history for analysis."""
+        current_memory = self._get_current_memory()
+        memory_delta = current_memory - workbook_info.get('memory_at_open', 0)
+        
+        self._memory_usage_history.append({
+            'file_path': file_path,
+            'opened_at': workbook_info.get('opened_at', 0),
+            'closed_at': time.time(),
+            'memory_delta_mb': memory_delta,
+            'peak_memory_mb': current_memory
+        })
+        
+        # Keep only last 100 entries
+        if len(self._memory_usage_history) > 100:
+            self._memory_usage_history = self._memory_usage_history[-100:]
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get resource tracking statistics."""
-        return {
-            'tracked_workbooks': len(self._workbooks),
-            'tracked_temp_files': len(self._temp_files),
-            'active_files': list(self._workbooks.keys())
-        }
+        """Get comprehensive resource tracking statistics."""
+        with self._lock:
+            avg_memory_delta = 0
+            if self._memory_usage_history:
+                avg_memory_delta = sum(h['memory_delta_mb'] for h in self._memory_usage_history) / len(self._memory_usage_history)
+            
+            return {
+                'tracked_workbooks': len(self._workbooks),
+                'tracked_temp_files': len(self._temp_files),
+                'active_files': list(self._workbooks.keys()),
+                'streaming_operations': len(self._streaming_operations),
+                'memory_history_entries': len(self._memory_usage_history),
+                'avg_memory_delta_mb': avg_memory_delta,
+                'current_memory_mb': self._get_current_memory()
+            }
+    
+    def get_memory_analysis(self) -> Dict[str, Any]:
+        """Get detailed memory usage analysis."""
+        with self._lock:
+            if not self._memory_usage_history:
+                return {'analysis': 'No memory history available'}
+            
+            # Analyze memory patterns
+            memory_deltas = [h['memory_delta_mb'] for h in self._memory_usage_history]
+            peak_memories = [h['peak_memory_mb'] for h in self._memory_usage_history]
+            
+            return {
+                'total_operations': len(self._memory_usage_history),
+                'avg_memory_delta_mb': sum(memory_deltas) / len(memory_deltas),
+                'max_memory_delta_mb': max(memory_deltas),
+                'min_memory_delta_mb': min(memory_deltas),
+                'avg_peak_memory_mb': sum(peak_memories) / len(peak_memories),
+                'max_peak_memory_mb': max(peak_memories),
+                'memory_leaks_detected': len([d for d in memory_deltas if d > 50]),  # >50MB delta
+                'recent_operations': self._memory_usage_history[-10:]
+            }
 
 
 # Global Excel resource tracker
@@ -273,7 +389,7 @@ def memory_monitored_context(file_path: str, **kwargs) -> Iterator:
         
         current_memory = process.memory_info().rss / (1024 * 1024)
         logger.info(f"Memory after loading {file_path}: {current_memory:.2f}MB "
-                   f"(Δ{current_memory - initial_memory:+.2f}MB)")
+                    f"(Δ{current_memory - initial_memory:+.2f}MB)")
         
         yield workbook
         
@@ -285,7 +401,7 @@ def memory_monitored_context(file_path: str, **kwargs) -> Iterator:
                 
                 final_memory = process.memory_info().rss / (1024 * 1024)
                 logger.info(f"Memory after closing {file_path}: {final_memory:.2f}MB "
-                           f"(Δ{final_memory - initial_memory:+.2f}MB)")
+                            f"(Δ{final_memory - initial_memory:+.2f}MB)")
             except Exception as e:
                 logger.warning(f"Error during memory cleanup: {str(e)}")
 
@@ -322,8 +438,8 @@ class MemoryMonitor:
                     }
                     
                     logger.info(f"Operation {operation_name}: "
-                               f"{duration:.2f}s, "
-                               f"Δ{end_memory - start_memory:+.2f}MB")
+                                f"{duration:.2f}s, "
+                                f"Δ{end_memory - start_memory:+.2f}MB")
             
             return wrapper
         return decorator

@@ -87,6 +87,10 @@ def popup_notice(
 ):
     root = tk._get_default_root()
     if not root:
-        root = tk.Tk()
-        root.withdraw()  # Hide if no main window
+        # Use shared root pattern to avoid multiple Tk() instances
+        from utils.window_positioning import ScreenInfo
+        if not ScreenInfo._shared_root:
+            ScreenInfo._shared_root = tk.Tk()
+            ScreenInfo._shared_root.withdraw()  # Hide the main root
+        root = ScreenInfo._shared_root
     messagebox.showinfo(title, msg)

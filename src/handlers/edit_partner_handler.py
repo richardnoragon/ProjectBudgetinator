@@ -167,17 +167,15 @@ def write_partner_data_to_worksheet(worksheet, partner_data):
             'wp9': 'K18', 'wp10': 'L18', 'wp11': 'M18', 'wp12': 'N18',
             'wp13': 'O18', 'wp14': 'P18', 'wp15': 'Q18'
         }
+        # Write WP values with proper zero vs empty distinction
+        from ..validation import format_value_for_excel
         for wp_key, cell_ref in wp_fields.items():
-            value = partner_data.get(wp_key, 0)
-            if isinstance(value, (int, float)):
-                worksheet[cell_ref] = float(value)
+            value = partner_data.get(wp_key)  # Can be None, 0.0, or other number
+            formatted_value = format_value_for_excel(value)
+            worksheet[cell_ref] = formatted_value
+            # Only apply number format if there's actually a numeric value
+            if formatted_value is not None and isinstance(formatted_value, (int, float)):
                 worksheet[cell_ref].number_format = '#,##0.00'
-            else:
-                try:
-                    worksheet[cell_ref] = float(value) if value else 0.0
-                    worksheet[cell_ref].number_format = '#,##0.00'
-                except (ValueError, TypeError):
-                    worksheet[cell_ref] = 0.0
             logger.debug(f"Wrote {wp_key} to cell {cell_ref}: {worksheet[cell_ref].value}")
         
         # Subcontractor information (same as add_partner_handler lines 641-658)
@@ -206,19 +204,14 @@ def write_partner_data_to_worksheet(worksheet, partner_data):
             ('sum_financial_contributions', 'F43'),
             ('sum_own_resources', 'F44')
         ]
+        # Write financial values with proper zero vs empty distinction
         for field_key, value_cell in financial_fields:
-            value = partner_data.get(field_key, '')
-            if value and isinstance(value, (int, float)):
-                worksheet[value_cell] = float(value)
+            value = partner_data.get(field_key)  # Can be None, number, or string
+            formatted_value = format_value_for_excel(value)
+            worksheet[value_cell] = formatted_value
+            # Only apply number format if there's actually a numeric value
+            if formatted_value is not None and isinstance(formatted_value, (int, float)):
                 worksheet[value_cell].number_format = '#,##0.00'
-            elif value:
-                try:
-                    worksheet[value_cell] = float(value)
-                    worksheet[value_cell].number_format = '#,##0.00'
-                except (ValueError, TypeError):
-                    worksheet[value_cell] = str(value)
-            else:
-                worksheet[value_cell] = ''
             logger.debug(f"Wrote {field_key} to cell {value_cell}: '{worksheet[value_cell].value}'")
         
         # Explanation fields (same as add_partner_handler lines 680-691)
@@ -442,23 +435,19 @@ class EditPartnerDialog(tk.Toplevel):
         wp_values = {}
         validation_errors = []
 
-        # Validate WP values with input sanitization
+        # Validate WP values with proper zero vs empty distinction
+        from ..validation import validate_wp_value
         for key, var in self.vars.items():
             if key.startswith('wp'):
                 raw_value = var.get().strip()
-                # Sanitize the input first
-                sanitized_value = InputSanitizer.sanitize_string(raw_value, max_length=20)
+                is_valid, converted_value, error = validate_wp_value(raw_value)
                 
-                if sanitized_value:
-                    # Validate as numeric
-                    numeric_value = InputSanitizer.sanitize_numeric_input(sanitized_value)
-                    if numeric_value is not None:
-                        wp_values[key] = float(numeric_value)
-                    else:
-                        validation_errors.append(f"{key}: Invalid numeric value '{sanitized_value}'")
-                        wp_values[key] = 0.0
+                if not is_valid and error:
+                    validation_errors.append(f"{key}: {error}")
+                    wp_values[key] = None  # Use None for invalid values
                 else:
-                    wp_values[key] = 0.0
+                    # Store the properly validated value (None for empty, float for numbers)
+                    wp_values[key] = converted_value
 
         # Get partner number and acronym from the readonly field
         partner_field = self.vars['partner_number_acronym'].get()
@@ -510,20 +499,19 @@ class EditPartnerDialog(tk.Toplevel):
             'sum_financial_contributions', 'sum_own_resources'
         ]
         
+        # Validate financial fields with proper zero vs empty distinction
+        from ..validation import validate_financial_value
         for field in financial_fields:
             if field in v:
                 raw_value = v[field].get().strip()
-                sanitized_value = InputSanitizer.sanitize_string(raw_value, max_length=20)
+                is_valid, converted_value, error = validate_financial_value(raw_value)
                 
-                if sanitized_value:
-                    numeric_value = InputSanitizer.sanitize_numeric_input(sanitized_value)
-                    if numeric_value is not None:
-                        sanitized_data[field] = str(numeric_value)
-                    else:
-                        validation_errors.append(f"{field}: Invalid numeric value '{sanitized_value}'")
-                        sanitized_data[field] = ''
+                if not is_valid and error:
+                    validation_errors.append(f"{field}: {error}")
+                    sanitized_data[field] = None  # Use None for invalid values
                 else:
-                    sanitized_data[field] = ''
+                    # Store the properly validated value (None for empty, float for numbers)
+                    sanitized_data[field] = converted_value
 
         # Show validation errors if any
         if validation_errors:
@@ -552,6 +540,51 @@ class EditPartnerDialog(tk.Toplevel):
                            partner_number=partner_number,
                            partner_acronym=partner_acronym,
                            field_count=len(self.result))
+                
+                # Update Budget Overview with edited partner data
+                try:
+                    from handlers.update_budget_overview_handler_formula import FormulaBudgetOverviewHandler
+                    workbook = self.worksheet.parent
+                    partner_num = int(partner_number)
+                    
+                    # Create handler with parent window to show debug windows
+                    # Use the parent of this dialog to show debug windows
+                    parent_window = self.master if hasattr(self, 'master') else None
+                    handler = FormulaBudgetOverviewHandler(parent_window)  # type: ignore
+                    budget_success = handler.update_budget_overview(workbook)
+                    
+                    if budget_success:
+                        logger.info("Budget Overview updated successfully after partner edit",
+                                   partner_number=partner_num)
+                    else:
+                        logger.warning("Failed to update Budget Overview after partner edit",
+                                      partner_number=partner_num)
+                except Exception as e:
+                    logger.warning("Exception during Budget Overview update after partner edit",
+                                  error=str(e), partner_number=partner_number)
+                    # Don't fail the entire operation, just log the warning
+                
+                # Update PM Overview with edited partner data
+                try:
+                    from handlers.update_pm_overview_handler import update_pm_overview_after_partner_operation
+                    workbook = self.worksheet.parent
+                    partner_num = int(partner_number)
+                    
+                    # Use the parent of this dialog to show debug windows
+                    parent_window = self.master if hasattr(self, 'master') else None
+                    pm_success = update_pm_overview_after_partner_operation(workbook, partner_num, parent_window)
+                    
+                    if pm_success:
+                        logger.info("PM Overview updated successfully after partner edit",
+                                   partner_number=partner_num)
+                    else:
+                        logger.warning("Failed to update PM Overview after partner edit",
+                                      partner_number=partner_num)
+                except Exception as e:
+                    logger.warning("Exception during PM Overview update after partner edit",
+                                  error=str(e), partner_number=partner_number)
+                    # Don't fail the entire operation, just log the warning
+                
                 messagebox.showinfo("Success", "Partner data updated successfully!")
             else:
                 logger.error("Failed to write partner data to worksheet")
@@ -595,12 +628,12 @@ def edit_partner_from_worksheet(parent, workbook, sheet_name):
         worksheet = workbook[sheet_name]
         
         # Extract partner number and acronym from sheet name
-        # Expected format: "P{number} {acronym}"
+        # Expected format: "P{number}-{acronym}"
         if not sheet_name.startswith('P'):
             messagebox.showerror("Error", f"Invalid partner sheet name format: '{sheet_name}'")
             return None
         
-        parts = sheet_name[1:].split(' ', 1)
+        parts = sheet_name[1:].split('-', 1)
         if len(parts) < 2:
             messagebox.showerror("Error", f"Invalid partner sheet name format: '{sheet_name}'")
             return None

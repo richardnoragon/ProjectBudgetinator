@@ -1,7 +1,7 @@
 import json
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 from pathlib import Path
 
 class PreferencesManager:
@@ -112,8 +112,15 @@ class PreferencesDialog:
                   command=self.browse_default_location).pack(anchor="e", padx=5)
 
         self.remember_location = tk.BooleanVar(value=self.current_config["remember_last_location"])
-        ttk.Checkbutton(locations_frame, text="Remember last used location", 
+        ttk.Checkbutton(locations_frame, text="Remember last used location",
                        variable=self.remember_location).pack(anchor="w")
+
+        # Window positioning section
+        positioning_frame = ttk.LabelFrame(self.dialog, text="Window Positioning")
+        positioning_frame.pack(fill="x", padx=5, pady=5)
+        
+        ttk.Button(positioning_frame, text="Configure Window Positioning...",
+                  command=self.show_positioning_preferences).pack(pady=5)
 
         # Config file management
         config_frame = ttk.LabelFrame(self.dialog, text="Configuration Management")
@@ -141,8 +148,8 @@ class PreferencesDialog:
             self.default_location.set(directory)
 
     def create_new_config(self):
-        name = tk.simpledialog.askstring("New Configuration", 
-                                       "Enter name for new configuration:")
+        name = simpledialog.askstring("New Configuration",
+                                     "Enter name for new configuration:")
         if name:
             if not name.endswith('.config.json'):
                 name = f"{name}.config.json"
@@ -178,8 +185,8 @@ class PreferencesDialog:
                 config2 = self.prefs_manager.load_config(config2_var.get())
                 merged = self.prefs_manager.merge_configs(config1, config2)
                 
-                name = tk.simpledialog.askstring("Save Merged Config", 
-                                               "Enter name for merged configuration:")
+                name = simpledialog.askstring("Save Merged Config",
+                                             "Enter name for merged configuration:")
                 if name:
                     if not name.endswith('.config.json'):
                         name = f"{name}.config.json"
@@ -200,13 +207,55 @@ class PreferencesDialog:
             self.default_location.set(self.current_config["default_file_location"])
             self.remember_location.set(self.current_config["remember_last_location"])
 
+    def show_positioning_preferences(self):
+        """Show the window positioning preferences dialog."""
+        try:
+            from gui.position_preferences import show_position_preferences_dialog
+        except ImportError:
+            try:
+                from .gui.position_preferences import show_position_preferences_dialog
+            except ImportError:
+                try:
+                    from src.gui.position_preferences import show_position_preferences_dialog
+                except ImportError:
+                    messagebox.showerror("Error", "Could not import positioning preferences module")
+                    return
+            # Create a simple preferences manager for compatibility
+            class SimplePrefsManager:
+                def __init__(self, prefs_manager):
+                    self.prefs_manager = prefs_manager
+                
+                def get_preference(self, key, default=None):
+                    config = self.prefs_manager.load_config()
+                    return config.get(key, default)
+                
+                def set_preference(self, key, value):
+                    config = self.prefs_manager.load_config()
+                    config[key] = value
+                    self.prefs_manager.save_config(config)
+                    return True
+            
+            simple_manager = SimplePrefsManager(self.prefs_manager)
+            result = show_position_preferences_dialog(self.dialog, simple_manager)
+            if result:
+                # Positioning preferences were saved, no need to do anything here
+                pass
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load positioning preferences: {e}")
+
     def save_preferences(self):
-        self.current_config["theme"] = self.theme_var.get()
-        self.current_config["startup_diagnostic"] = self.diagnostic_var.get()
-        self.current_config["welcome_screen"] = self.welcome_var.get()
-        self.current_config["default_file_location"] = self.default_location.get()
-        self.current_config["remember_last_location"] = self.remember_location.get()
+        # Load current config to preserve window_positioning and other settings
+        current_config = self.prefs_manager.load_config()
         
-        self.prefs_manager.save_config(self.current_config)
+        # Update only the preferences we're managing in this dialog
+        current_config.update({
+            "theme": self.theme_var.get(),
+            "startup_diagnostic": self.diagnostic_var.get(),
+            "welcome_screen": self.welcome_var.get(),
+            "default_file_location": self.default_location.get(),
+            "remember_last_location": self.remember_location.get()
+        })
+        
+        self.prefs_manager.save_config(current_config)
         messagebox.showinfo("Success", "Preferences saved successfully")
         self.dialog.destroy()

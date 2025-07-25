@@ -4,9 +4,9 @@ Diagnostic system for checking application state and configuration.
 import os
 from pathlib import Path
 import json
-from ..utils.config_utils import get_app_directory
-from ..utils.dialog_utils import show_error
-from ..version import full_version_string
+from utils.config_utils import get_app_directory
+from utils.dialog_utils import show_error
+from version import full_version_string
 
 
 def run_directory_check():

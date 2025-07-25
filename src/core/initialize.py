@@ -4,10 +4,10 @@ Application initialization and setup.
 import os
 from pathlib import Path
 import logging
-from ..utils.config_utils import create_directory_structure
-from ..utils.dialog_utils import show_info
-from ..core.diagnostics import get_diagnostic_summary
-from ..core.preferences import PreferencesManager
+from utils.config_utils import create_directory_structure, get_app_directory
+from utils.dialog_utils import show_info
+from core.diagnostics import get_diagnostic_summary
+from core.preferences import PreferencesManager
 
 
 def init_application():

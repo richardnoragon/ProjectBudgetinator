@@ -1,31 +1,9 @@
-tkinter>=8.6
-pandas>=2.3.0
-PyInstaller>=6.14.1
-openpyxl>=3.1.2
+# Core dependencies for ProjectBudgetinator
+openpyxl>=3.0.0
+pandas>=1.3.0
 
-# Performance monitoring dependencies
-psutil>=5.9.0
-matplotlib>=3.7.0
-
-# Configuration management dependencies
-pydantic>=2.0.0
-jsonschema>=4.0.0
-python-dotenv>=1.0.0
-
-# Testing dependencies
-pytest>=7.0.0
-pytest-mock>=3.10.0
-pytest-cov>=4.0.0
-pytest-benchmark>=4.0.0
-
-# Static analysis dependencies
-mypy>=1.5.0
-pylint>=3.0.0
-flake8>=6.0.0
-bandit>=1.7.5
-black>=23.0.0
-isort>=5.12.0
-
-# Security validation dependencies
-python-magic>=0.4.27
-python-magic-bin>=0.4.14; sys_platform == "win32"
+# Optional dependencies for enhanced functionality
+# Uncomment if needed:
+# matplotlib>=3.5.0  # For data visualization
+# numpy>=1.21.0      # For numerical operations
+# pillow>=8.0.0      # For image handling in GUI

@@ -1,0 +1,132 @@
+PM_OVERVIEW_IMPLEMENTATION_GUIDE.md
+CodeRabbit . Invalid Excel-formula example (A-11:A-2 ) [Ln 74-80]
+CodeRabbit . adjust_formula_references lacks algorithmic detail [Ln 88-104]
+CodeRabbit . Broad except swallows diagnostic context [Ln 112-124]
+UPDATE_BUDGET_OVERVIEW_HANDLER_DESIGN.md
+CodeRabbit . Update base class reference to match implementation [Ln 57]
+UPDATE_BUDGET_OVERVIEW_IMPLEMENTATION_GUIDE.md
+CodeRabbit . Expand test coverage for comprehensive validation [Ln 692-741]
+ZERO_VS_EMPTY_VALUE_REQUIREMENTS.md
+CodeRabbit . Prefer Decimal over float for monetary precision [Ln 16-18]
+debug_auth.py
+CodeRabbit . Security risk: Hardcoded credentials should not be in source code. [Ln 32-37]
+auth_manager.py src\auth
+CodeRabbit . Verify default profile creation success. [Ln 142-145]
+CodeRabbit . Reconsider blocking admin password changes. [Ln 295-299]
+CodeRabbit . Optimize count methods for better performance. [Ln 367-373]
+CodeRabbit . Add thread safety to singleton pattern. [Ln 384-397]
+password_utils.py src\auth
+CodeRabbit . Critical security vulnerability: Use a password-specific hashing algorithm. [Ln 13-31]
+CodeRabbit . Security issues: Timing attack vulnerability and weak hashing dependency. [Ln 33-56]
+CodeRabbit . Weak password validation creates security risk. [Ln 72-91]
+CodeRabbit . Security concern: Hardcoded weak default password. [Ln 93-104]
+profile_manager.py src\auth
+CodeRabbit . Use UTC timestamps for consistency. [Ln 74-75]
+CodeRabbit . Use UTC timestamp for consistency. [Ln 145]
+CodeRabbit . Improve error handling and validation in import_profile. [Ln 378-399]
+session_manager.py src\auth
+user_manager.py src\auth
+CodeRabbit . Use db_manager abstraction instead of direct SQLite access. [Ln 130-185]
+CodeRabbit . Authorization check needed for admin function. [Ln 186-235]
+CodeRabbit . Add authorization checks and use database abstraction. [Ln 236-286]
+CodeRabbit . Authorization required for user deactivation. [Ln 287-325]
+CodeRabbit . Good cascade delete implementation, but needs authorization. [Ln 326-370]
+CodeRabbit . Add user existence check and authorization. [Ln 371-399]
+CodeRabbit . Critical security issue: weak default admin password. [Ln 416-436]
+preferences.py src\core
+CodeRabbit . The merge function doesn't handle deeply nested dictionaries correctly. [Ln 57-70]
+db_manager.py src\database
+CodeRabbit . Extract User object construction to reduce code duplication [Ln 129-138]
+CodeRabbit . Add error handling for datetime parsing [Ln 135-136]
+CodeRabbit . Extract profile row conversion to reduce duplication [Ln 265-276]
+CodeRabbit . Potential timezone issues in session cleanup [Ln 474-478]
+CodeRabbit . Add validation for backup path [Ln 502-512]
+models.py src\database
+CodeRabbit . Add error handling for datetime parsing. [Ln 32-40]
+CodeRabbit . Validate environment_type against constants. [Ln 49]
+CodeRabbit . Add error handling for JSON serialization. [Ln 72-74]
+CodeRabbit . Add error handling for JSON deserialization. [Ln 84-87]
+CodeRabbit . Add error handling for datetime parsing in UserSession. [Ln 139-144]
+CodeRabbit . Add handling for unknown environment types. [Ln 172-219]
+password_change_dialog.py src\gui\auth
+CodeRabbit . Critical security issue: Remove password disclosure. [Ln 62-72]
+CodeRabbit . Consider strengthening password requirements. [Ln 137-144]
+CodeRabbit . Strengthen password length requirement. [Ln 177-182]
+profile_switcher.py src\gui\auth
+CodeRabbit . Remove duplicate import statements. [Ln 302-327]
+user_admin_dialog.py src\gui\auth
+CodeRabbit . Potential index mismatch between tree view and users list. [Ln 240-246]
+CodeRabbit . Extract default password as a constant and consider security implications. [Ln 342]
+CodeRabbit . Security concern: Don't reveal the admin password in error messages. [Ln 410-415]
+position_preferences.py src\gui
+CodeRabbit . Add error handling for preferences_manager method access. [Ln 51-61]
+CodeRabbit . Inconsistent alignment options in horizontal alignment frame. [Ln 245-268]
+CodeRabbit . Reset functionality doesn't update UI properly. [Ln 353-362]
+CodeRabbit . Incomplete fallback for preview positioning. [Ln 383-390]
+CodeRabbit . Success message shown even when preferences aren't actually saved. [Ln 438-442]
+CodeRabbit . Inconsistent type hint for parent parameter. [Ln 456]
+theme_manager.py src\gui
+CodeRabbit . Add return type annotation to match the implementation. [Ln 138-147]
+CodeRabbit . Avoid accessing private attributes directly. [Ln 507]
+CodeRabbit . Consider theme-aware default color. [Ln 523-527]
+window_manager.py src\gui
+CodeRabbit . Improve exception handling and consider import optimization. [Ln 246-253]
+add_partner_handler.py src\handlers
+CodeRabbit . Missing import statement for validation module. [Ln 315]
+base_handler.py src\handlers
+CodeRabbit . Good optimization, but be cautious about data mutation. [Ln 294-302]
+budget_overview_format.py src\handlers
+CodeRabbit . Fix type hint evaluation error when openpyxl is not available [Ln 16-27]
+CodeRabbit . Improve exception handling and string conversion safety [Ln 134-146]
+CodeRabbit . Avoid creating new Tk() instance in Toplevel window [Ln 180]
+CodeRabbit . Replace bare except clauses with specific exceptions [Ln 228-230]
+CodeRabbit . Fix Tk() initialization in error handler [Ln 448]
+edit_partner_handler.py src\handlers
+CodeRabbit . Missing import statements for validation module. [Ln 171]
+edit_workpackage_handler.py src\handlers
+CodeRabbit . Consider improving import consistency and error handling approach. [Ln 225-237]
+pm_overview_format.py src\handlers
+CodeRabbit . Avoid catching all exceptions - be more specific. [Ln 144-146]
+CodeRabbit . Potential issue with creating Tk root. [Ln 180]
+CodeRabbit . Hardcoded row range should be configurable. [Ln 208]
+CodeRabbit . Improve exception handling specificity. [Ln 214-215]
+CodeRabbit . Same Tk root creation issue as earlier. [Ln 448]
+update_budget_overview_handler.py src\handlers
+CodeRabbit . Disable debug flags in production code [Ln 45-47]
+CodeRabbit . Sheet name format inconsistency [Ln 63-88]
+CodeRabbit . Remove GUI dependency for automatic operations [Ln 106-116]
+update_budget_overview_handler_fixed.py src\handlers
+CodeRabbit . Potential issue with creating Tk() instance [Ln 77]
+CodeRabbit . Same potential issue with Tk() instance [Ln 341]
+update_budget_overview_handler_formula.py src\handlers
+CodeRabbit . Make DEBUG_ENABLED configurable [Ln 39]
+CodeRabbit . Avoid creating multiple Tk root instances [Ln 78]
+CodeRabbit . Enhance sheet name quoting logic [Ln 101-110]
+CodeRabbit . Same Tkinter root instance issue [Ln 321]
+update_budget_overview_handler_simple.py src\handlers
+CodeRabbit . Incorrect formula cell handling logic. [Ln 166-172]
+CodeRabbit . Avoid manually setting cell data_type. [Ln 237-244]
+update_pm_overview_handler.py src\handlers
+CodeRabbit . Debug flags should be configurable. [Ln 48-51]
+CodeRabbit . Same Tk root creation issue. [Ln 145]
+CodeRabbit . Avoid using type ignore comments. [Ln 250]
+CodeRabbit . Function behavior doesn't match its name and documentation. [Ln 596-632]
+CodeRabbit . Consider consolidating duplicate update functions. [Ln 638-673]
+main.py src
+CodeRabbit . Consider raising an exception instead of returning from _init_ [Ln 89-92]
+CodeRabbit . Extract common workbook loading logic to reduce duplication [Ln 1060-1185]
+CodeRabbit . Consolidate update_budget_overview and update_pm_overview [Ln 1186-1310]
+CodeRabbit . Avoid revealing admin password in user messages [Ln 2100-2103]
+preferences.py src
+CodeRabbit . Address performance and design concerns in the wrapper implementation. [Ln 210-236]
+window_positioning.py src\utils
+CodeRabbit . Avoid creating temporary Tk instances [Ln 50-57]
+CodeRabbit . Add robust geometry string parsing [Ln 447-451]
+CodeRabbit . Add thread safety to singleton pattern [Ln 477-482]
+CodeRabbit . Pass preferences_manager to position_dialog [Ln 491-494]
+test_hyphen_fix.py
+CodeRabbit . Address import duplication and potential initialization issues. [Ln 87-128]
+test_preferences.py
+CodeRabbit . Add error handling for missing preferences module. [Ln 20-23]
+test_update_pm_overview_handler.py tests
+CodeRabbit . End-to-end test provides valuable real workbook validation. [Ln 454-515]

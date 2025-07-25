@@ -196,6 +196,20 @@ class AddWorkpackageDialog:
             # Log the error but don't prevent saving
             print(f"Warning: Could not apply table formatting: {str(e)}")
         
+        # Update PM Overview after workpackage operation
+        try:
+            from handlers.update_pm_overview_handler import update_pm_overview_after_workpackage_operation
+            parent_window = self.dialog.master if hasattr(self.dialog, 'master') else None
+            pm_success = update_pm_overview_after_workpackage_operation(self.workbook, parent_window)
+            if pm_success:
+                print("PM Overview updated successfully after workpackage add")
+            else:
+                print("Warning: PM Overview update failed after workpackage add")
+        except ImportError:
+            print("Warning: Could not import PM Overview update function")
+        except Exception as e:
+            print(f"Warning: PM Overview update failed: {str(e)}")
+        
         self.dialog.destroy()
 
 

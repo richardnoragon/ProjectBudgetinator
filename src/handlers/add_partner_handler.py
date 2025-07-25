@@ -3,7 +3,6 @@ Partner management functions for working with Excel workbooks.
 """
 import datetime
 import time
-from openpyxl.styles import PatternFill, Alignment
 from tkinter import (
     messagebox,
     Toplevel,
@@ -26,6 +25,15 @@ from handlers.base_handler import BaseHandler, ValidationResult, OperationResult
 from logger import get_structured_logger, LogContext
 from gui.progress_dialog import ProgressContext, show_progress_for_operation
 
+# Safe openpyxl imports with fallback
+try:
+    from openpyxl.styles import PatternFill, Alignment
+    OPENPYXL_STYLES_AVAILABLE = True
+except ImportError:
+    PatternFill = None
+    Alignment = None
+    OPENPYXL_STYLES_AVAILABLE = False
+
 # Create exception handler instance
 exception_handler = ExceptionHandler()
 
@@ -39,8 +47,8 @@ def get_existing_partners(workbook):
     if workbook:
         for sheet_name in workbook.sheetnames:
             if sheet_name.startswith('P') and len(sheet_name) > 1:
-                # Extract the part after 'P' and before the first space
-                parts = sheet_name[1:].split(' ', 1)
+                # Extract the part after 'P' and before the first hyphen
+                parts = sheet_name[1:].split('-', 1)
                 if parts and parts[0].isdigit():
                     partner_num = int(parts[0])
                     # Add just the partner number format for validation
@@ -311,23 +319,19 @@ class PartnerDialog(Toplevel):
         wp_values = {}
         validation_errors = []
 
-        # Validate WP values with input sanitization
+        # Validate WP values with proper zero vs empty distinction
+        from ..validation import validate_wp_value
         for key, var in self.vars.items():
             if key.startswith('wp'):
                 raw_value = var.get().strip()
-                # Sanitize the input first
-                sanitized_value = InputSanitizer.sanitize_string(raw_value, max_length=20)
+                is_valid, converted_value, error = validate_wp_value(raw_value)
                 
-                if sanitized_value:
-                    # Validate as numeric
-                    numeric_value = InputSanitizer.sanitize_numeric_input(sanitized_value)
-                    if numeric_value is not None:
-                        wp_values[key] = float(numeric_value)
-                    else:
-                        validation_errors.append(f"{key}: Invalid numeric value '{sanitized_value}'")
-                        wp_values[key] = 0.0
+                if not is_valid and error:
+                    validation_errors.append(f"{key}: {error}")
+                    wp_values[key] = None  # Use None for invalid values
                 else:
-                    wp_values[key] = 0.0
+                    # Store the properly validated value (None for empty, float for numbers)
+                    wp_values[key] = converted_value
 
         # Get partner number and acronym from the readonly field
         partner_field = self.vars['partner_number_acronym'].get()
@@ -379,20 +383,19 @@ class PartnerDialog(Toplevel):
             'sum_financial_contributions', 'sum_own_resources'
         ]
         
+        # Validate financial fields with proper zero vs empty distinction
+        from ..validation import validate_financial_value
         for field in financial_fields:
             if field in v:
                 raw_value = v[field].get().strip()
-                sanitized_value = InputSanitizer.sanitize_string(raw_value, max_length=20)
+                is_valid, converted_value, error = validate_financial_value(raw_value)
                 
-                if sanitized_value:
-                    numeric_value = InputSanitizer.sanitize_numeric_input(sanitized_value)
-                    if numeric_value is not None:
-                        sanitized_data[field] = str(numeric_value)
-                    else:
-                        validation_errors.append(f"{field}: Invalid numeric value '{sanitized_value}'")
-                        sanitized_data[field] = ''
+                if not is_valid and error:
+                    validation_errors.append(f"{field}: {error}")
+                    sanitized_data[field] = None  # Use None for invalid values
                 else:
-                    sanitized_data[field] = ''
+                    # Store the properly validated value (None for empty, float for numbers)
+                    sanitized_data[field] = converted_value
 
         # Show validation errors if any
         if validation_errors:
@@ -448,7 +451,7 @@ def _add_partner_with_progress(progress_dialog, workbook, partner_info):
             progress_dialog.update_progress(10, 100)
             
             sheet_name = (
-                f"P{partner_info['project_partner_number']} "
+                f"P{partner_info['project_partner_number']}-"
                 f"{partner_info['partner_acronym']}"
             )
             
@@ -587,7 +590,7 @@ def add_partner_to_workbook(workbook, partner_info):
                    partner_acronym=partner_info.get('partner_acronym'))
         
         sheet_name = (
-            f"P{partner_info['project_partner_number']} "
+            f"P{partner_info['project_partner_number']}-"
             f"{partner_info['partner_acronym']}"
         )
         
@@ -622,7 +625,8 @@ def add_partner_to_workbook(workbook, partner_info):
         ws['D7'] = partner_info['role']
 
 
-        # Write WP values
+        # Write WP values with proper zero vs empty distinction
+        from ..validation import format_value_for_excel
         wp_fields = {
             'wp1': 'C18', 'wp2': 'D18', 'wp3': 'E18', 'wp4': 'F18',
             'wp5': 'G18', 'wp6': 'H18', 'wp7': 'I18', 'wp8': 'J18',
@@ -630,9 +634,12 @@ def add_partner_to_workbook(workbook, partner_info):
             'wp13': 'O18', 'wp14': 'P18', 'wp15': 'Q18'
         }
         for wp_key, cell_ref in wp_fields.items():
-            value = float(partner_info.get(wp_key, 0))
-            ws[cell_ref] = value
-            ws[cell_ref].number_format = '#,##0.00'
+            value = partner_info.get(wp_key)  # Can be None, 0.0, or other number
+            formatted_value = format_value_for_excel(value)
+            ws[cell_ref] = formatted_value
+            # Only apply number format if there's actually a numeric value
+            if formatted_value is not None and isinstance(formatted_value, (int, float)):
+                ws[cell_ref].number_format = '#,##0.00'
 
         # Write subcontractor information
         # Subcontractor 1
@@ -665,12 +672,12 @@ def add_partner_to_workbook(workbook, partner_info):
             ('sum_own_resources', 'F44')
         ]
         for field_key, value_cell in financial_fields:
-            value = partner_info.get(field_key, '')
-            if value and isinstance(value, (int, float)):
-                ws[value_cell] = float(value)
+            value = partner_info.get(field_key)  # Can be None, number, or string
+            formatted_value = format_value_for_excel(value)
+            ws[value_cell] = formatted_value
+            # Only apply number format if there's actually a numeric value
+            if formatted_value is not None and isinstance(formatted_value, (int, float)):
                 ws[value_cell].number_format = '#,##0.00'
-            else:
-                ws[value_cell] = value
 
         # Write explanation fields
         explanation_fields = [
@@ -707,28 +714,31 @@ def add_partner_to_workbook(workbook, partner_info):
             # Apply styling to all cells in range
             for cell in cells:
                 if fill_color:
-                    cell.fill = PatternFill(
-                        start_color=fill_color,
-                        end_color=fill_color,
-                        fill_type='solid'
-                    )
+                    if OPENPYXL_STYLES_AVAILABLE and PatternFill:
+                        cell.fill = PatternFill(
+                            start_color=fill_color,
+                            end_color=fill_color,
+                            fill_type='solid'
+                        )
                 
                 # Handle both simple alignment and complex alignment objects
                 if alignment:
                     if isinstance(alignment, str):
                         # Simple alignment like "center"
-                        cell.alignment = Alignment(
-                            horizontal=alignment,
-                            vertical='center',
-                            wrap_text=True
-                        )
+                        if OPENPYXL_STYLES_AVAILABLE and Alignment:
+                            cell.alignment = Alignment(
+                                horizontal=alignment,
+                                vertical='center',
+                                wrap_text=True
+                            )
                     elif isinstance(alignment, dict):
                         # Complex alignment object
-                        cell.alignment = Alignment(
-                            horizontal=alignment.get('horizontal', 'center'),
-                            vertical=alignment.get('vertical', 'center'),
-                            wrap_text=alignment.get('wrapText', True)
-                        )
+                        if OPENPYXL_STYLES_AVAILABLE and Alignment:
+                            cell.alignment = Alignment(
+                                horizontal=alignment.get('horizontal', 'center'),
+                                vertical=alignment.get('vertical', 'center'),
+                                wrap_text=alignment.get('wrapText', True)
+                            )
                 
                 # Handle borders
                 borders_config = format_item.get('borders')
@@ -831,6 +841,39 @@ def add_partner_to_workbook(workbook, partner_info):
 
     # Update version history
     update_version_history(workbook, f"Added partner: {sheet_name}")
+    
+    # Update Budget Overview with new partner data
+    try:
+        from handlers.update_budget_overview_handler import update_budget_overview_after_partner_operation
+        partner_number = int(partner_info['project_partner_number'])
+        success = update_budget_overview_after_partner_operation(workbook, partner_number)
+        if success:
+            logger.info("Budget Overview updated successfully after partner addition",
+                       partner_number=partner_number)
+        else:
+            logger.warning("Failed to update Budget Overview after partner addition",
+                          partner_number=partner_number)
+    except Exception as e:
+        logger.warning("Exception during Budget Overview update after partner addition",
+                      error=str(e), partner_number=partner_info.get('project_partner_number'))
+        # Don't fail the entire operation, just log the warning
+    
+    # Update PM Overview with new partner data
+    try:
+        from handlers.update_pm_overview_handler import update_pm_overview_after_partner_operation
+        partner_number = int(partner_info['project_partner_number'])
+        success = update_pm_overview_after_partner_operation(workbook, partner_number)
+        if success:
+            logger.info("PM Overview updated successfully after partner addition",
+                       partner_number=partner_number)
+        else:
+            logger.warning("Failed to update PM Overview after partner addition",
+                          partner_number=partner_number)
+    except Exception as e:
+        logger.warning("Exception during PM Overview update after partner addition",
+                      error=str(e), partner_number=partner_info.get('project_partner_number'))
+        # Don't fail the entire operation, just log the warning
+    
     return True
 
 
